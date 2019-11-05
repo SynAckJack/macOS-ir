@@ -90,6 +90,19 @@ function check_xprotect_last_updated {
 	echo "${PASS}[+]${NC} XProtect last updated: ${date}"
 }
 
+function check_install_history {
+
+	local history
+
+	#https://news.ycombinator.com/item?id=20407233, 13/9/19
+	history="$(system_profiler SPInstallHistoryDataType)"
+	if [ -n "${history}" ] ; then
+		echo "${INFO}[*]${NC} ${history}"
+	else
+		echo "${INFO}[*]${NC} No install history..."
+	fi
+}
+
 function main {
 
 	check_sudo_permission
@@ -97,6 +110,7 @@ function main {
 	check_macOS_update
 	check_efi
 	check_xprotect_last_updated
+	check_install_history
 }
 
 main "$@"
