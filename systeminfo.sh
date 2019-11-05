@@ -151,9 +151,20 @@ function main {
 	elif [[ "${var}" = "sip" ]] ; then
 		check_sip
 
+	elif [[ "${var}" = "all" ]] ; then
+		check_sudo_permission
+		check_macOS_version
+		check_macOS_update
+		check_efi
+		check_xprotect_last_updated
+		check_install_history
+		check_mrt_update
+		check_sip
+		
 	else
 		usage
 	fi
+
 	
 }
 
