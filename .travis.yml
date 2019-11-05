@@ -1,0 +1,14 @@
+#../.travis.yml
+
+langage: bash
+sudo: enabled
+before_install:
+  - sudo chmod +x lint.sh
+
+script:
+  - ./lint.sh
+
+notifications:
+  slack: macos-re:Tl7YSIDulswfO2dTTBP6Pfna
+  on_success: always
+  on_fail: always
