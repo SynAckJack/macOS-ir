@@ -118,6 +118,14 @@ function check_mrt_update {
 	fi
 }
 
+function check_sip {
+
+	if csrutil status | grep -q 'enabled' ; then
+		echo "${PASS}[+]${NC} System Integrity Protection enabled..."
+	else
+		echo "${FAIL}[-]${NC} System Integrity Protection disabled..."
+	fi
+}
 function main {
 
 	check_sudo_permission
@@ -127,6 +135,7 @@ function main {
 	check_xprotect_last_updated
 	check_install_history
 	check_mrt_update
+	check_sip
 }
 
 main "$@"
