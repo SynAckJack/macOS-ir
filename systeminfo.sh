@@ -130,6 +130,8 @@ function main {
 
 	local var=${1:-"usage"}
 
+	check_sudo_permission
+
 	if [[ "${var}" = "version" ]] ; then
 		check_macOS_version
 
@@ -152,7 +154,6 @@ function main {
 		check_sip
 
 	elif [[ "${var}" = "all" ]] ; then
-		check_sudo_permission
 		check_macOS_version
 		check_macOS_update
 		check_efi
@@ -160,7 +161,7 @@ function main {
 		check_install_history
 		check_mrt_update
 		check_sip
-		
+
 	else
 		usage
 	fi
