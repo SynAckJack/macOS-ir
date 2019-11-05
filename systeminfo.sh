@@ -128,14 +128,33 @@ function check_sip {
 }
 function main {
 
-	check_sudo_permission
-	check_macOS_version
-	check_macOS_update
-	check_efi
-	check_xprotect_last_updated
-	check_install_history
-	check_mrt_update
-	check_sip
+	local var=${1:-"usage"}
+
+	if [[ "${var}" = "version" ]] ; then
+		check_macOS_version
+
+	elif [[ "${var}" = "update" ]] ; then
+		check_macOS_update
+
+	elif [[ "${var}" = "efi" ]] ; then
+		check_efi
+
+	elif [[ "${var}" = "xprotect" ]] ; then
+		check_xprotect_last_updated
+
+	elif [[ "${var}" = "install" ]] ; then
+		check_install_history
+
+	elif [[ "${var}" = "mrt" ]] ; then
+		check_mrt_update
+
+	elif [[ "${var}" = "sip" ]] ; then
+		check_sip
+
+	else
+		usage
+	fi
+	
 }
 
 main "$@"
