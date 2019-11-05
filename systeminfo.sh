@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-ERROR=$(echo -en '\033[01;31m')
+FAIL=$(echo -en '\033[01;31m')
 PASS=$(echo -en '\033[01;32m')
 NC=$(echo -en '\033[0m')
 #WARN=$(echo -en '\033[1;33m')
@@ -24,7 +24,7 @@ function check_sudo_permission {
 	echo "${INFO}[*]${NC} Checking if sudo user..."
 
 	if [ "$EUID" -ne 0 ]; then
-		echo "${ERROR}[-]${NC} Sudo perimissions are required. Please run again with sudo..."
+		echo "${FAIL}[-]${NC} Sudo perimissions are required. Please run again with sudo..."
 		return 1
 	else
 		
@@ -64,11 +64,25 @@ function check_macOS_update {
 
 }
 
+# https://eclecticlight.co/2018/06/02/how-high-sierra-checks-your-efi-firmware/
+function check_efi {
+
+	echo "${INFO}[*]${NC} Checking EFI Integrity..."
+	#shellcheck disable=SC2143
+	if [ "$(/usr/libexec/firmwarecheckers/eficheck/eficheck \
+		--integrity-check | grep -c 'No changes')" ] ; then
+	 	echo "${PASS}[+]${NC} EFI integrity passed..."
+	 else
+	 	echo "${FAIL}[-]${NC} EFI integrity failed!"
+	fi
+}
+
 function main {
 
 	check_sudo_permission
 	check_macOS_version
 	check_macOS_update
+	check_efi
 }
 
 main "$@"
