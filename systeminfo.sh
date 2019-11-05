@@ -33,9 +33,27 @@ function check_sudo_permission {
 	fi 
 }
 
+#Check version of macOS
+function check_macOS_version {
+
+	local version
+
+	version="$(sw_vers -productVersion)"
+
+	echo "${INFO}[*]${NC} Checking macOS version...${NC}"
+
+	if [[ "${version}" ]]; then
+		echo "${PASS}[+]${NC} Currently installed macOS version: $version"
+	else
+		return 1
+	fi
+
+}
+
 function main {
 
 	check_sudo_permission
+	check_macOS_version
 	
 }
 
