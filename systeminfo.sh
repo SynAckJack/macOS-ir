@@ -103,6 +103,21 @@ function check_install_history {
 	fi
 }
 
+function check_mrt_update {
+	#(https://eclecticlight.co/2018/09/28/silent-mojave-night-security-settings-files-in-macos-mojave/)
+
+	local mrt
+
+	#https://news.ycombinator.com/item?id=20407233, 13/9/19 (up until 'grep'. Everything else was me)
+	mrt="$(softwareupdate --history --all | grep MRT | awk -F "softwareupdated" 'NR > 1 { exit }; 1' | awk -F " " ' { print $2 } ')"
+
+	if [ -n "${mrt}" ] ; then
+		echo "${PASS}[+]${NC} Current MRT version: ${mrt}"
+	else
+		echo "${FAIL}[-]${NC} Couldn't detect MRT version..."
+	fi
+}
+
 function main {
 
 	check_sudo_permission
@@ -111,6 +126,7 @@ function main {
 	check_efi
 	check_xprotect_last_updated
 	check_install_history
+	check_mrt_update
 }
 
 main "$@"
