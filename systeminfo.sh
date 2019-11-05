@@ -77,12 +77,26 @@ function check_efi {
 	fi
 }
 
+# http://osxdaily.com/2017/05/01/check-xprotect-version-mac/
+function check_xprotect_last_updated {
+
+	local date
+
+	echo "${INFO}[*]${NC} Checking XProtect last updated..."
+
+	#shellcheck disable=2012
+	date="$(ls -l /System/Library/CoreServices/XProtect.bundle/Contents/Resources/XProtect.plist | awk -F " " ' { print $6" "$7" "$8 } ')"
+
+	echo "${PASS}[+]${NC} XProtect last updated: ${date}"
+}
+
 function main {
 
 	check_sudo_permission
 	check_macOS_version
 	check_macOS_update
 	check_efi
+	check_xprotect_last_updated
 }
 
 main "$@"
