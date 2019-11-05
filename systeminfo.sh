@@ -21,14 +21,14 @@ EOF
 
 #Check if sudo 
 function check_sudo_permission {
-	echo "${INFO}[*]${NC} Checking if sudo user...${NC}"
+	echo "${INFO}[*]${NC} Checking if sudo user..."
 
 	if [ "$EUID" -ne 0 ]; then
 		echo "${ERROR}[-]${NC} Sudo perimissions are required. Please run again with sudo..."
 		return 1
 	else
 		
-		echo "${PASS}[+]${NC} Running as sudo...${NC}"
+		echo "${PASS}[+]${NC} Running as sudo..."
 		return 0
 	fi 
 }
@@ -40,7 +40,7 @@ function check_macOS_version {
 
 	version="$(sw_vers -productVersion)"
 
-	echo "${INFO}[*]${NC} Checking macOS version...${NC}"
+	echo "${INFO}[*]${NC} Checking macOS version..."
 
 	if [[ "${version}" ]]; then
 		echo "${PASS}[+]${NC} Currently installed macOS version: $version"
@@ -50,11 +50,25 @@ function check_macOS_version {
 
 }
 
+#Check if there are any macOS software/security updates available (2.)
+function check_macOS_update {
+
+	echo "${INFO}[*]${NC} Checking for software updates..."
+
+	# shellcheck disable=SC2143
+	if [ "$(softwareupdate -l | grep -c 'No new')" ]; then
+		echo "${PASS}[+]${NC} No updates available..."
+	else
+		echo "${WARN}[!]${NC} Updates available..."
+	fi
+
+}
+
 function main {
 
 	check_sudo_permission
 	check_macOS_version
-	
+	check_macOS_update
 }
 
 main "$@"
