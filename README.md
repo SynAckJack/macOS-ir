@@ -20,3 +20,12 @@ To Complete
  - Install history
  - SIP status
  
+ _TO DO:_
+ 
+ - Output logs to file
+ - Fix ping statement to make more reliable (74706abd09402c4c51723a09462c8dcd047af794)
+ - FileVault
+ - Firewall
+ - Firmware Password
+
+ 
