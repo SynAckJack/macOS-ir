@@ -21,7 +21,14 @@ EOF
 function output_to_file() {
 
 	for i in "${output[@]}" ; do
-		echo "${i}" >> output.txt
+		
+		if [[ "${i}" == *"[+]"* ]] ;  then
+			temp="$(echo "${i}" | awk -F "0m" ' { print $NF } ')"
+			echo "${temp}" >> HOSTNAME.txt
+		else 
+			echo "${i}" >> HOSTNAME.txt
+		fi
+
 	done
 
 }
@@ -63,7 +70,7 @@ function check_macOS_update {
 	echo "${INFO}[*]${NC} Checking for software updates..."
 
 	echo "${INFO}[*]${NC} Checking internet connection..."
-	if ping -q -c 1 -W 1 8.8.8.8 >/dev/null ; then
+	if ping -q -c 1 -W 1 8.8.8.8 > /dev/null ; then
 		echo "${PASS}[+]${NC} Intenet connected. Continuing..."
 	else
 		echo "${FAIL}[-]${NC} No internet connection. Skipping..."
