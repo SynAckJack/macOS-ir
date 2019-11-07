@@ -62,11 +62,12 @@ function check_macOS_update {
 
 	output+=("${INFO}[*]${NC} Checking for software updates...")
 
-	if [ "$(ping 8.8.8.8)" ] ; then
-		output+=(echo "${INFO}[*]${NC} Connected to the internet, continuing...")
+	output+=("${INFO}[*]${NC} Checking internet connection...")
+	if ping -q -c 1 -W 1 8.8.8.8 >/dev/null ; then
+		output+=("${FAIL}[-]${NC} No internet connection. Skipping...")
+		return
 	else
-		output+=(echo "${FAIL}[-]${NC} Not connected to internet, skipping...")
-		return 0
+		output+=("${PASS}[+]${NC} Intenet connected. Continuing...")
 	fi
 	# shellcheck disable=SC2143
 	if [ "$(softwareupdate -l | grep -c 'No new')" ]; then
@@ -175,7 +176,7 @@ function main {
 
 	elif [[ "${var}" = "all" ]] ; then
 		check_macOS_version
-		#check_macOS_update
+		check_macOS_update
 		check_efi
 		check_xprotect_last_updated
 		check_install_history
