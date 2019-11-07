@@ -64,16 +64,16 @@ function check_macOS_update {
 
 	echo "${INFO}[*]${NC} Checking internet connection..."
 	if ping -q -c 1 -W 1 8.8.8.8 >/dev/null ; then
-		output+=("${FAIL}[-]${NC} No internet connection. Skipping...")
+		echo "${PASS}[+]${NC} Intenet connected. Continuing..."
+	else
+		echo "${FAIL}[-]${NC} No internet connection. Skipping..."
 		return
-	else
-		output+=("${PASS}[+]${NC} Intenet connected. Continuing...")
-	fi
 	# shellcheck disable=SC2143
-	if [ "$(softwareupdate -l | grep -c 'No new')" ]; then
-		output+=("${PASS}[+]${NC} No updates available...")
-	else
-		output+=("${WARN}[!]${NC} Updates available...")
+		if [ "$(softwareupdate -l | grep -c 'No new')" ]; then
+			output+=("${PASS}[+]${NC} No updates available...")
+		else
+			output+=("${WARN}[!]${NC} Updates available...")
+		fi
 	fi
 
 }
