@@ -20,7 +20,9 @@ EOF
 }
 function output_to_file() {
 
-	echo "$1"
+	for i in "${output[@]}" ; do
+		echo "${i}"
+	done
 
 }
 
@@ -45,12 +47,10 @@ function check_macOS_version {
 
 	version="$(sw_vers -productVersion)"
 
-	echo "${INFO}[*]${NC} Checking macOS version..."
+	output+=("${INFO}[*]${NC} Checking macOS version...")
 
 	if [[ "${version}" ]]; then
-		output="${PASS}[+]${NC} Currently installed macOS version: $version"
-		output_to_file "${output}"
-
+		output+=("${PASS}[+]${NC} Currently installed macOS version: $version")
 	else
 		return 1
 	fi
@@ -60,13 +60,19 @@ function check_macOS_version {
 #Check if there are any macOS software/security updates available (2.)
 function check_macOS_update {
 
-	echo "${INFO}[*]${NC} Checking for software updates..."
+	output+=("${INFO}[*]${NC} Checking for software updates...")
 
+	if [ "$(ping 8.8.8.8)" ] ; then
+		output+=(echo "${INFO}[*]${NC} Connected to the internet, continuing...")
+	else
+		output+=(echo "${FAIL}[-]${NC} Not connected to internet, skipping...")
+		return 0
+	fi
 	# shellcheck disable=SC2143
 	if [ "$(softwareupdate -l | grep -c 'No new')" ]; then
-		echo "${PASS}[+]${NC} No updates available..."
+		output+=("${PASS}[+]${NC} No updates available...")
 	else
-		echo "${WARN}[!]${NC} Updates available..."
+		output+=("${WARN}[!]${NC} Updates available...")
 	fi
 
 }
@@ -74,13 +80,13 @@ function check_macOS_update {
 # https://eclecticlight.co/2018/06/02/how-high-sierra-checks-your-efi-firmware/
 function check_efi {
 
-	echo "${INFO}[*]${NC} Checking EFI Integrity..."
+	output+=("${INFO}[*]${NC} Checking EFI Integrity...")
 	#shellcheck disable=SC2143
 	if [ "$(/usr/libexec/firmwarecheckers/eficheck/eficheck \
 		--integrity-check | grep -c 'No changes')" ] ; then
-	 	echo "${PASS}[+]${NC} EFI integrity passed..."
+	 	output+=("${PASS}[+]${NC} EFI integrity passed...")
 	 else
-	 	echo "${FAIL}[-]${NC} EFI integrity failed!"
+	 	output+=("${FAIL}[-]${NC} EFI integrity failed!")
 	fi
 }
 
@@ -89,12 +95,12 @@ function check_xprotect_last_updated {
 
 	local date
 
-	echo "${INFO}[*]${NC} Checking XProtect last updated..."
+	output+=("${INFO}[*]${NC} Checking XProtect last updated...")
 
 	#shellcheck disable=2012
 	date="$(ls -l /System/Library/CoreServices/XProtect.bundle/Contents/Resources/XProtect.plist | awk -F " " ' { print $6" "$7" "$8 } ')"
 
-	echo "${PASS}[+]${NC} XProtect last updated: ${date}"
+	output+=("${PASS}[+]${NC} XProtect last updated: ${date}")
 }
 
 function check_install_history {
@@ -104,9 +110,9 @@ function check_install_history {
 	#https://news.ycombinator.com/item?id=20407233, 13/9/19
 	history="$(system_profiler SPInstallHistoryDataType)"
 	if [ -n "${history}" ] ; then
-		echo "${INFO}[*]${NC} ${history}"
+		output+=("${INFO}[*]${NC} ${history}")
 	else
-		echo "${INFO}[*]${NC} No install history..."
+		output+=("${INFO}[*]${NC} No install history...")
 	fi
 }
 
@@ -119,18 +125,18 @@ function check_mrt_update {
 	mrt="$(softwareupdate --history --all | grep MRT | awk -F "softwareupdated" 'NR > 1 { exit }; 1' | awk -F " " ' { print $2 } ')"
 
 	if [ -n "${mrt}" ] ; then
-		echo "${PASS}[+]${NC} Current MRT version: ${mrt}"
+		output+=("${PASS}[+]${NC} Current MRT version: ${mrt}")
 	else
-		echo "${FAIL}[-]${NC} Couldn't detect MRT version..."
+		output+=("${FAIL}[-]${NC} Couldn't detect MRT version...")
 	fi
 }
 
 function check_sip {
 
 	if csrutil status | grep -q 'enabled' ; then
-		echo "${PASS}[+]${NC} System Integrity Protection enabled..."
+		output+=("${PASS}[+]${NC} System Integrity Protection enabled...")
 	else
-		echo "${FAIL}[-]${NC} System Integrity Protection disabled..."
+		output+=("${FAIL}[-]${NC} System Integrity Protection disabled...")
 	fi
 }
 
@@ -165,13 +171,13 @@ function main {
 
 	elif [[ "${var}" = "all" ]] ; then
 		check_macOS_version
-		check_macOS_update
+		#check_macOS_update
 		check_efi
 		check_xprotect_last_updated
 		check_install_history
 		check_mrt_update
 		check_sip
-
+		output_to_file output[@]
 	else
 		usage
 	fi
