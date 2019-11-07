@@ -18,6 +18,11 @@ Usage:
 EOF
 		exit 0
 }
+function output_to_file() {
+
+	echo "$1"
+
+}
 
 #Check if sudo 
 function check_sudo_permission {
@@ -43,7 +48,9 @@ function check_macOS_version {
 	echo "${INFO}[*]${NC} Checking macOS version..."
 
 	if [[ "${version}" ]]; then
-		echo "${PASS}[+]${NC} Currently installed macOS version: $version"
+		output="${PASS}[+]${NC} Currently installed macOS version: $version"
+		output_to_file "${output}"
+
 	else
 		return 1
 	fi
@@ -126,9 +133,12 @@ function check_sip {
 		echo "${FAIL}[-]${NC} System Integrity Protection disabled..."
 	fi
 }
+
 function main {
 
 	local var=${1:-"usage"}
+
+	declare -a output
 
 	check_sudo_permission
 
@@ -165,7 +175,6 @@ function main {
 	else
 		usage
 	fi
-
 	
 }
 
