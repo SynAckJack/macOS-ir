@@ -21,7 +21,7 @@ EOF
 function output_to_file() {
 
 	for i in "${output[@]}" ; do
-		echo "${i}"
+		echo "${i}" >> output.txt
 	done
 
 }
@@ -47,7 +47,7 @@ function check_macOS_version {
 
 	version="$(sw_vers -productVersion)"
 
-	output+=("${INFO}[*]${NC} Checking macOS version...")
+	echo "${INFO}[*]${NC} Checking macOS version..."
 
 	if [[ "${version}" ]]; then
 		output+=("${PASS}[+]${NC} Currently installed macOS version: $version")
@@ -60,9 +60,9 @@ function check_macOS_version {
 #Check if there are any macOS software/security updates available (2.)
 function check_macOS_update {
 
-	output+=("${INFO}[*]${NC} Checking for software updates...")
+	echo "${INFO}[*]${NC} Checking for software updates..."
 
-	output+=("${INFO}[*]${NC} Checking internet connection...")
+	echo "${INFO}[*]${NC} Checking internet connection..."
 	if ping -q -c 1 -W 1 8.8.8.8 >/dev/null ; then
 		output+=("${FAIL}[-]${NC} No internet connection. Skipping...")
 		return
@@ -81,7 +81,7 @@ function check_macOS_update {
 # https://eclecticlight.co/2018/06/02/how-high-sierra-checks-your-efi-firmware/
 function check_efi {
 
-	output+=("${INFO}[*]${NC} Checking EFI Integrity...")
+	echo "${INFO}[*]${NC} Checking EFI Integrity..."
 	#shellcheck disable=SC2143
 	if [ "$(/usr/libexec/firmwarecheckers/eficheck/eficheck \
 		--integrity-check | grep -c 'No changes')" ] ; then
@@ -96,7 +96,7 @@ function check_xprotect_last_updated {
 
 	local date
 
-	output+=("${INFO}[*]${NC} Checking XProtect last updated...")
+	echo "${INFO}[*]${NC} Checking XProtect last updated..."
 
 	#shellcheck disable=2012
 	date="$(ls -l /System/Library/CoreServices/XProtect.bundle/Contents/Resources/XProtect.plist | awk -F " " ' { print $6" "$7" "$8 } ')"
@@ -108,7 +108,7 @@ function check_install_history {
 
 	local history
 
-	output+=("${INFO}[*]${NC} Checking Application install history..")
+	echo "${INFO}[*]${NC} Checking Application install history.."
 	#https://news.ycombinator.com/item?id=20407233, 13/9/19
 	history="$(system_profiler SPInstallHistoryDataType)"
 	if [ -n "${history}" ] ; then
@@ -123,7 +123,7 @@ function check_mrt_update {
 
 	local mrt
 
-	output+=("${INFO}[*]${NC} Checking MRT last updated...")
+	echo "${INFO}[*]${NC} Checking MRT last updated..."
 	#https://news.ycombinator.com/item?id=20407233, 13/9/19 (up until 'grep'. Everything else was me)
 	mrt="$(softwareupdate --history --all | grep MRT | awk -F "softwareupdated" 'NR > 1 { exit }; 1' | awk -F " " ' { print $2 } ')"
 
@@ -136,7 +136,7 @@ function check_mrt_update {
 
 function check_sip {
 
-	output+=("${INFO}[*]${NC} Checking System Integrity Protection status...")
+	echo "${INFO}[*]${NC} Checking System Integrity Protection status..."
 
 	if csrutil status | grep -q 'enabled' ; then
 		output+=("${PASS}[+]${NC} System Integrity Protection enabled.")
@@ -150,7 +150,7 @@ function check_firewall {
 	local firewall
 	local stealthFirewall
 
-	output+=("${INFO}[*]${NC} Checking firewall status...")
+	echo "${INFO}[*]${NC} Checking firewall status..."
 
 	firewall="$(defaults read /Library/Preferences/com.apple.alf globalstate)"
 
