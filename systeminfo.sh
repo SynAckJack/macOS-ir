@@ -112,7 +112,7 @@ function check_install_history {
 	#https://news.ycombinator.com/item?id=20407233, 13/9/19
 	history="$(system_profiler SPInstallHistoryDataType)"
 	if [ -n "${history}" ] ; then
-		output+=("${INFO}[*]${NC} ${history}")
+		output+=("${PASS}[+]${NC} ${history}")
 	else
 		output+=("${INFO}[*]${NC} No install history...")
 	fi
@@ -139,9 +139,33 @@ function check_sip {
 	output+=("${INFO}[*]${NC} Checking System Integrity Protection status...")
 
 	if csrutil status | grep -q 'enabled' ; then
-		output+=("${PASS}[+]${NC} System Integrity Protection enabled...")
+		output+=("${PASS}[+]${NC} System Integrity Protection enabled.")
 	else
-		output+=("${FAIL}[-]${NC} System Integrity Protection disabled...")
+		output+=("${FAIL}[-]${NC} System Integrity Protection disabled.")
+	fi
+}
+
+function check_firewall {
+
+	local firewall
+	local stealthFirewall
+
+	output+=("${INFO}[*]${NC} Checking firewall status...")
+
+	firewall="$(defaults read /Library/Preferences/com.apple.alf globalstate)"
+
+	if [[ "${firewall}" -ge 1 ]] ; then
+		output+=("${PASS}[+]${NC} Firewall enabled.")
+	else 
+		output+=("${FAIL}[-]${NC} Firewall disabled.")
+	fi
+
+	stealthFirewall="$(defaults read /Library/Preferences/com.apple.alf stealthenabled)"
+
+	if [[ "${stealthFirewall}" -eq 1 ]] ; then
+		output+=("${PASS}[+]${NC} Stealth firewall enabled.")
+	else 
+		output+=("${FAIL}[-]${NC} Stealth firewall disabled.")
 	fi
 }
 
@@ -182,6 +206,7 @@ function main {
 		check_install_history
 		check_mrt_update
 		check_sip
+		check_firewall
 		output_to_file output[@]
 	else
 		usage
