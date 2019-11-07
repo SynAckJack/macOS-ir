@@ -107,6 +107,7 @@ function check_install_history {
 
 	local history
 
+	output+=("${INFO}[*]${NC} Checking Application install history..")
 	#https://news.ycombinator.com/item?id=20407233, 13/9/19
 	history="$(system_profiler SPInstallHistoryDataType)"
 	if [ -n "${history}" ] ; then
@@ -121,6 +122,7 @@ function check_mrt_update {
 
 	local mrt
 
+	output+=("${INFO}[*]${NC} Checking MRT last updated...")
 	#https://news.ycombinator.com/item?id=20407233, 13/9/19 (up until 'grep'. Everything else was me)
 	mrt="$(softwareupdate --history --all | grep MRT | awk -F "softwareupdated" 'NR > 1 { exit }; 1' | awk -F " " ' { print $2 } ')"
 
@@ -132,6 +134,8 @@ function check_mrt_update {
 }
 
 function check_sip {
+
+	output+=("${INFO}[*]${NC} Checking System Integrity Protection status...")
 
 	if csrutil status | grep -q 'enabled' ; then
 		output+=("${PASS}[+]${NC} System Integrity Protection enabled...")
