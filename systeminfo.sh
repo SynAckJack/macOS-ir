@@ -24,7 +24,7 @@ function output_to_file() {
 		
 		if [[ "${i}" == *"[+]"* ]] ;  then
 			temp="$(echo "${i}" | awk -F "0m" ' { print $NF } ')"
-			echo "${temp}" >> HOSTNAME.txt
+			echo "[+]${temp}" >> HOSTNAME.txt
 		else 
 			echo "${i}" >> HOSTNAME.txt
 		fi
@@ -35,6 +35,7 @@ function output_to_file() {
 
 #Check if sudo 
 function check_sudo_permission {
+
 	echo "${INFO}[*]${NC} Checking if sudo user..."
 
 	if [ "$EUID" -ne 0 ]; then
