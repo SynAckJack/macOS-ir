@@ -24,9 +24,9 @@ function output_to_file() {
 		
 		if [[ "${i}" == *"[+]"* ]] ;  then
 			temp="$(echo "${i}" | awk -F "0m" ' { print $NF } ')"
-			echo "[+]${temp}" >> HOSTNAME.txt
+			echo -e "[+]${temp}" >> "${lHostName}".txt
 		else 
-			echo "${i}" >> HOSTNAME.txt
+			echo -e "${i}" >> HOSTNAME.txt
 		fi
 
 	done
@@ -132,7 +132,7 @@ function check_mrt_update {
 	local mrt
 
 	echo "${INFO}[*]${NC} Checking MRT last updated..."
-	#https://news.ycombinator.com/item?id=20407233, 13/9/19 (up until 'grep'. Everything else was me)
+	#https://news.ycombinator.com/item?id=20407233, 13/9/19 
 	mrt="$(softwareupdate --history --all | grep MRT | awk -F "softwareupdated" 'NR > 1 { exit }; 1' | awk -F " " ' { print $2 } ')"
 
 	if [ -n "${mrt}" ] ; then
@@ -177,6 +177,44 @@ function check_firewall {
 	fi
 }
 
+function get_device_name {
+
+	local hostName
+	local computerName
+	local netBIOS
+
+	echo "${INFO}[*]${NC} Gathering hostnames..."
+
+	lHostName="$(scutil --get LocalHostName)"
+
+	if [ "${lHostName}" ] ; then
+		output+=("${PASS}[+]${NC} Local HostName - ${lHostName}")
+	fi
+
+	# hostName="$(scutil --get HostName)"
+
+	# if  (scutil --get HostName | grep -q "HostName: not set") >> /dev/null ; then
+	# 	output+=("${FAIL}[-]${NC} HostName not set.")
+	# else
+	# 	output+=("${PASS}[+]${NC} Device HostName - $(scutil --get HostName)")
+	# fi
+
+	computerName="$(scutil --get ComputerName)"
+
+	if [ "${computerName}" ] ; then
+		output+=("${PASS}[+]${NC} Computer Name - ${computerName}")
+	fi
+
+	netBIOS="$(defaults read /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName)"
+
+	if [ "${netBIOS}" ] ; then
+		output+=("${PASS}[+]${NC} NetBIOS Name - ${netBIOS}")
+	fi
+
+	
+
+}
+
 function main {
 
 	local var=${1:-"usage"}
@@ -207,6 +245,7 @@ function main {
 		check_sip
 
 	elif [[ "${var}" = "all" ]] ; then
+		get_device_name
 		check_macOS_version
 		check_macOS_update
 		check_efi
