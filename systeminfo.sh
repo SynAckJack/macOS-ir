@@ -179,7 +179,7 @@ function check_firewall {
 
 function get_device_name {
 
-	local hostName
+	# local hostName
 	local computerName
 	local netBIOS
 
