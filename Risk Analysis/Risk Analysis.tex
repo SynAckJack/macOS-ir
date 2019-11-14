@@ -19,11 +19,12 @@
 \newcommand*{\mycite}[1]{\textit{\citetitle{#1}} \parencite{#1}}
 \newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
 \newcolumntype{M}[1]{>{\centering\arraybackslash}m{#1}}
+\newcommand\tab[1][0.5cm]{\hspace*{#1}}
 
 \hyphenpenalty=10000
 
 \title{An Investigation into Incident Response for the Modern macOS}
-\author{Risk Analysis\\Feasibility Demo\\ \\Jack Clark\\School of Design and Informatics\\Abertay University\\DUNDEE, DD1 1HG, UK}
+\author{Required Artefacts\\Feasibility Demo\\ \\Jack Clark\\School of Design and Informatics\\Abertay University\\DUNDEE, DD1 1HG, UK}
 
 \lefthyphenmin=64
 
@@ -36,11 +37,59 @@
 \end{figure} 
 
 \pagenumbering{gobble}
+
 \maketitle
 
 \newpage
 
+\tableofcontents
+
+\newpage
+
 \pagenumbering{arabic}
+
+\section{Research Question}
+
+\textit{The following Aim and Objectives have been updated since initially submitted. These have been updated to further specify the function of the end software.}
+
+\subsection{Aim}
+
+To develop software to assist in the Incident Response process for macOS by automating the triage process and producing an easy to read report.
+
+\subsection{Objectives}
+
+The project has the following objectives:
+
+\begin{itemize}
+	\item{To investigate key security concepts of macOS}
+	\item{To analyse common techniques that macOS malware implements to infect target systems}
+	\item{To research current techniques and tools used in Incident Response}
+	\item{Apply the discovered tehniques to develop prototype software that can be used during Incident Response}
+\end{itemize}
+
+
+\subsection{General Research Question}
+
+The project has the following general research question:\\
+
+\textit{How can the initial triage of the Incident Response process be automated to reduce response time?}
+
+\subsection{Specific Research Questions}
+
+The project has the following specific research questions:\\
+
+\begin{itemize}
+	\item{\textit{How does macOS protect and secure the end-users data from malware?}}
+	\item{\textit{How does malware bypass security features of macOS to infect the target device?}}
+	\item{\textit{What data must be gathered to provide enough information for an Incident Responder to evaluate the situation?}}
+\end{itemize}
+
+
+\newpage
+
+\section{Project Planning}
+
+\newpage 
 
 \section{Risk Impact}
 
@@ -50,7 +99,7 @@ The risk likelihood and consequences are measured on values between 1-3 and 1-5 
 
 \begin{center}
 \centering
-\begin{tabular}{ ||M{4cm}|M{4cm}|M{4cm}|M{4cm}||  }
+\begin{tabular}{ ||M{4cm}|M{3cm}|M{3cm}|M{3cm}||  }
 
  \hline
  \multicolumn{4}{||c||}{Impact of Risks} \\
@@ -76,7 +125,39 @@ The risk likelihood and consequences are measured on values between 1-3 and 1-5 
 \end{tabular}
 \end{center}
 
-\section{Risk Analysis}
+\subsection{Risk Analysis}
+
+\subsubsection{Risk Details}
+
+\tab\textit{Data Loss}\\
+Data loss is a risk that is faced whenever performing work. This can occur while performing a software update or the development device failing. To mitigate this risk, a constant backup will be made of the development device. The current work will also be pushed to GitHub, allowing for any data loss to be recovered should the need be.\\
+
+\textit{Major OS Change}\\
+Throughout the execution stage of the project, updates will typically be release for macOS. As the tool is going to be aimed at the most recent macOS version, some techniques or files may have changed due to the update. To avoid this risk would be very difficult as it cannot be predicted as to what will be changed, however, to attempt to reduce the damage caused whenever an update is installed the tool under development will be completely tested again to ensure that all functions still operate as expected.\\
+
+\textit{Underestimating Development Time}\\
+To estimate exactly how long each specific stage of the project will take would be incredibly difficult due to many factors that cannot be predicted. To combat this risk extra time will be added to each stage during the project planning stage. This will allow any unforseen delays to occur and not effect the end date. The final expected deadline will also be moved back to around 2-4 weeks before the submission date. This will allow for drafts of the end dissertation and any additional development to be included.\\
+
+\textit{Underestimating Knowledge of Topic}\\
+The knowledge that I have developed so far seems to be reasonable. However if I have underestimated my knowledge then more time will need to be spent on research rather than development. Due to this, delays can occur and the final tool may not include all the features that are wished for. To mitigate this risk, research was performed over summer and is still being performed. It is expected that research will continue throughout the execution of the project and so extra time has been allocated to accomodate this.\\
+
+\textit{Underestimating Programming Skills}\\
+My confidence in my programming skills is relatively high. I have decided to develop the tool in bash, for multiple reasons and one of which being due to my familiarity with it. It is expected that I may not have the skills to perform every task that I wish to include in the final tool, and so multiple resources have been research to assist with particular issues that may arise. Further to this, over summer I spent time developing my bash programming skills to avoid this issue as best I can.\\
+
+\textit{Illness}\\
+There is a high likelihood that illness will occur during the exection stage due to the time of the year that this will begin. To avoid a large delay due to this, a small amount of time may be taken to recover rather than continuing which may cause a larger delay.\\
+
+\textit{Personal Issues}\\
+There are multiple personal issues which may occur while executing the project. These can cause a large delay and so additional time has been included to accomodate for any issue which may arise.\\
+
+\textit{Other Coursework}\\
+As this module is one of three that will be sat in the second semester, time must be split between them. If too much time is spent on another and takes too much time, this can cause a delay for the execution. To accomodate this, work will be planned out weekly to ensure that time is spent equally between the modules.\\
+
+\subsubsection{Controlling Risks}
+
+To alleviate the risks detailed above, checkpoints will be used to ensure that timing of the project is on track. These will be implemented after each key stage and when programming after each key feature that is implemented. This then gives time to evaluate what has been done, what needs to be done and how long is left to complete that stage and the remaining stages.
+
+If it is deemed that the project will not be completed in time for the ideal deadline (stated previously 2-4 weeks before the submission date), then the current stage will be evaluated and a new deadline will be decided. 
 
 
 
