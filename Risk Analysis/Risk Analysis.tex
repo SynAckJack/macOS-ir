@@ -1,0 +1,89 @@
+\documentclass[11pt,a4paper]{article} 
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{url}
+\usepackage{titling}
+\usepackage[hidelinks]{hyperref}
+\usepackage[british]{babel}
+\usepackage[font={small,bf}]{caption}
+\usepackage[a4paper,textwidth=8.2cm,left=1.9cm,%
+			right=1.9cm,top=2.54cm,bottom=2.54cm]{geometry}
+\usepackage[style=authoryear,backend=biber,urldate=short]{biblatex}
+\usepackage{array}
+\usepackage[table]{xcolor}
+
+\graphicspath{ {images/} }
+\setlength{\columnsep}{0.8cm}
+
+% \addbibresource{references.bib}% ,Syntax ,for version >= 1.2
+\newcommand*{\mycite}[1]{\textit{\citetitle{#1}} \parencite{#1}}
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{M}[1]{>{\centering\arraybackslash}m{#1}}
+
+\hyphenpenalty=10000
+
+\title{An Investigation into Incident Response for the Modern macOS}
+\author{Risk Analysis\\Feasibility Demo\\ \\Jack Clark\\School of Design and Informatics\\Abertay University\\DUNDEE, DD1 1HG, UK}
+
+\lefthyphenmin=64
+
+\begin{document}
+
+\pagenumbering{gobble}
+
+\begin{figure}
+		\includegraphics[width=\linewidth]{Abertay}
+\end{figure} 
+
+\pagenumbering{gobble}
+\maketitle
+
+\newpage
+
+\pagenumbering{arabic}
+
+\section{Risk Impact}
+
+The following table details the risks that may occur while executing the project. These risk impact is calculated by the following formula, Impact = Likelihood x Consequence. Following the table, how these risks will be avoided and prevented is discussed. \\
+
+The risk likelihood and consequences are measured on values between 1-3 and 1-5 respectively. The higher the value, the higher the impact.
+
+\begin{center}
+\centering
+\begin{tabular}{ ||M{4cm}|M{4cm}|M{4cm}|M{4cm}||  }
+
+ \hline
+ \multicolumn{4}{||c||}{Impact of Risks} \\
+ \hline
+ Risk & Risk Likelihood & Risk Consequence & Risk Impact \\
+ \hline \hline
+ Data loss due to development machine failure& 1 & 5 & \cellcolor{green}5\\
+ \hline
+ Major OS change& 1 & 5 & \cellcolor{green}5\\
+ \hline
+ Underestimating development time &   2  & 5 & \cellcolor{red}10\\
+ \hline
+ Underestimating knowledge of topic & 2 & 4 &  \cellcolor{yellow}8\\
+ \hline
+ Underestimating programming skills & 1 & 4 &  \cellcolor{green}4\\
+ \hline
+ Illness & 3 & 4 & \cellcolor{red}12\\
+ \hline
+ Personal issues & 1  & 5 & \cellcolor{green}5\\
+ \hline
+ Other coursework & 2  & 4 & \cellcolor{yellow}8\\
+ \hline
+\end{tabular}
+\end{center}
+
+\section{Risk Analysis}
+
+
+
+% \nocite{*}
+
+% \begin{flushleft}
+% 	\printbibliography
+% \end{flushleft}
+
+\end{document}
