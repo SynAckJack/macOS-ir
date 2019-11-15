@@ -11,6 +11,7 @@
 \usepackage[style=authoryear,backend=biber,urldate=short]{biblatex}
 \usepackage{array}
 \usepackage[table]{xcolor}
+\usepackage{rotating}
 
 \graphicspath{ {images/} }
 \setlength{\columnsep}{0.8cm}
@@ -88,6 +89,21 @@ The project has the following specific research questions:\\
 \newpage
 
 \section{Project Planning}
+
+\subsection{Gantt Chart}
+
+% \begin{figure}[H]
+% 		\includegraphics[width=\linewidth, angle=90]{"Gantt Chart"}
+% \end{figure} 
+
+\rotatebox{90}{\begin{minipage}{0.75\textheight}
+    \includegraphics[width=\textwidth]{"Gantt Chart"}
+    \captionof{figure}{Gantt Chart Detailing Expected Timescale For Execution}
+\end{minipage}}
+
+\newpage
+
+\subsection{Time Estimates Table}
 
 \newpage 
 
