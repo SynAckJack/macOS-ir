@@ -1,4 +1,11 @@
-# Feasibility-Demo
+# macOS-ir
+4th Year Ethical Hacking Dissertation. Based on Incident Response for macOS, this tool will gather vital data from a macOS system that has been compromised and present it in an easy-to-read format.
+
+## Requirements
+Currently the only requirement is **XCode Tools**. Only software provided in this package is used.
+
+
+## Feasibility-Demo
 
 	- Annotated Bibliography
 	- Risk Analysis
