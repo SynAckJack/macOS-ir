@@ -11,10 +11,12 @@ FAIL=$(echo -en '\033[01;31m')
 PASS=$(echo -en '\033[01;32m')
 NC=$(echo -en '\033[0m')
 INFO=$(echo -en '\033[01;35m')
+WARN=$(echo -en '\033[1;33m')
 
 function main {
 
 	local disk=${1:-"none"}
+	local passphrase
 
 	if [ "${disk}" == "none" ] ; then
 		local directory
@@ -30,12 +32,26 @@ function main {
 			echo "${FAIL}[-]${NC} $(directory) already exists. Exiting..."
 			exit 1
 		fi
-
-
 	else
-		true
-	fi 
+		echo "${INFO}[*]${NC} Checking disk..."
 
+		if [[ -e /Volumes/"${disk}" ]] ; then
+			echo "${WARN}[!]${NC} Continuing will erase this disk, proceeding in 5 seconds..."
+			sleep 5
+			echo "${PASS}[+]${NC} Continuing..."
+
+			passphrase="$(head -c24 < /dev/urandom | base64 | tr -cd '[:alnum:]')"
+
+			if diskutil apfs eraseVolume "${disk}" -name Untitled -passphrase "${passphrase}" >>/dev/null  ; then
+				echo "${INFO}[*]${NC} Disk erased. Passphrase: ${passphrase}"
+			fi
+
+		else 
+			echo "Volume don't exists"
+			exit 1
+		fi
+
+	fi 
 }
 
 main "$@"
