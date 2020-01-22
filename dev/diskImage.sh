@@ -76,6 +76,8 @@ function usb {
 function network {
 	
 	local ip=${1}
+	local passphrase
+	local lHostName
 
 	echo "${INFO}[*]${NC} Checking IP Address..."
 
@@ -95,6 +97,31 @@ function network {
 		IFS=$'\n'
 
 		# COLLECTION
+
+		# Compress files
+		if tar cvf output.tar ./*  ; then
+			lHostName="$(scutil --get LocalHostName)"
+			passphrase=$(head -c24 < /dev/urandom | base64 | tr -cd '[:alnum:]')
+			if openssl enc -e -aes256 -in output.tar -out "${lHostName}".tar.gz -pass pass:"${passphrase}" ; then
+				echo "${PASS}[+]${NC} Successfully compressed and encrypted data. Passphrase: ${passphrase}"
+				rm output.tar
+			else
+				echo "${FAIL}[-]${NC} Failed to encrypt data. Exitting..."
+				exit 1
+			fi
+		else
+			echo "${FAIL}[-]${NC} Failed to compress data. Exitting..."
+			exit 1
+		fi
+		
+		# md5 files
+
+
+		# openssl enc -d -aes256 -in AAAA.tar.gz -pass pass:"${passphrase}" | tar xz -C test
+		# md5 files
+		# md5sum .tar >> output
+		# # send day files
+		# tar -zcf - . | pv | nc -n 10.148.1.177 5555 
 
 	else
 		echo "${FAIL}[-]${NC} Please provide an IP address. Exiting..."
