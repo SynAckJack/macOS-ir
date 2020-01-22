@@ -18,12 +18,12 @@ WARN=$(echo -en '\033[1;33m')
 
 function usage {
 	cat << EOF
-	./diskImage [-u | -n | -d | -h] [USB Name | IP Address]
+	./diskImage [-u | -n | -d | -h] [USB Name | IP Address:Port]
 	Usage:
 		-h		- Show this message
 		-u		- Copy extracted data to provided USB drive. ** NOTE: DRIVE WILL BE ERASED **
 		-d		- Copy extracted data to a disk image. ** NOTE: This disk image will be created using APFS and encrypted **
-		-n		- Transfer collected data to another device using nc
+		-n		- Transfer collected data to another device using nc. Takes IP and Port in format <IP ADDRESS>:<PORT>
 		
 EOF
 		exit 0
@@ -75,11 +75,15 @@ function usb {
 
 function network {
 	
-	local ip=${1}
+	local ipPort=${1}
+	local port
 	local passphrase
 	local lHostName
 
 	echo "${INFO}[*]${NC} Checking IP Address..."
+
+	ip=$(echo "${ipPort}" | awk -F ":" ' { print $1 } ')
+	port=$(echo "${ipPort}" | awk -F ":" ' { print $2 } ')
 
 	if [ ! "${ip}" == "none" ] && [[ "${ip}" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]] ; then
 
@@ -99,10 +103,10 @@ function network {
 		# COLLECTION
 
 		# Compress files
-		if tar cvf output.tar ./*  ; then
+		if tar cvf output.tar ./* > /dev/null 2>&1 ; then
 			lHostName="$(scutil --get LocalHostName)"
 			passphrase=$(head -c24 < /dev/urandom | base64 | tr -cd '[:alnum:]')
-			if openssl enc -e -aes256 -in output.tar -out "${lHostName}".tar.gz -pass pass:"${passphrase}" ; then
+			if openssl enc -e -aes256 -in output.tar -out "${lHostName}".tar.gz -pass pass:"${passphrase}"; then
 				echo "${PASS}[+]${NC} Successfully compressed and encrypted data. Passphrase: ${passphrase}"
 				rm output.tar
 			else
@@ -114,14 +118,21 @@ function network {
 			exit 1
 		fi
 		
-		# md5 files
+		echo "${INFO}[*]${NC} Performing md5 hash of files..."
 
+		if find . -type f -exec md5sum '{}' \; >> "${lHostName}"-md5sum.txt ; then
+			echo "${PASS}[+]${NC} MD5 hash complete. Stored in: ${lHostName}-md5.txt"
+		else
+			echo "${WARN}[!]${NC} MD5 hash failed. Continuing..."
+		fi
 
-		# openssl enc -d -aes256 -in AAAA.tar.gz -pass pass:"${passphrase}" | tar xz -C test
-		# md5 files
-		# md5sum .tar >> output
-		# # send day files
-		# tar -zcf - . | pv | nc -n 10.148.1.177 5555 
+		echo "${INFO}[*]${NC} Starting nc transfer to ${ipPort}..."
+
+		echo "${INFO}[*]${NC} Waiting on connection..."
+
+		if tar -zcf - . | pv -f | nc -n -w5 "${ip}" "${port}" ; then
+			echo "${PASS}[+]${NC} Successfully transferred data. Remember passphrase: ${passphrase}"
+		fi
 
 	else
 		echo "${FAIL}[-]${NC} Please provide an IP address. Exiting..."
