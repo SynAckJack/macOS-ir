@@ -82,10 +82,12 @@ function network {
 
 	echo "${INFO}[*]${NC} Checking IP Address..."
 
-	ip=$(echo "${ipPort}" | awk -F ":" ' { print $1 } ')
-	port=$(echo "${ipPort}" | awk -F ":" ' { print $2 } ')
+	
 
-	if [ ! "${ip}" == "none" ] && [[ "${ip}" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]] ; then
+	if [ ! "${ip}" == "none" ] && [[ "${ip}" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\:[0-9]{1,5}$ ]] ; then
+
+		ip=$(echo "${ipPort}" | awk -F ":" ' { print $1 } ')
+		port=$(echo "${ipPort}" | awk -F ":" ' { print $2 } ')
 
 		IFS="."
 
@@ -94,7 +96,7 @@ function network {
 		if [[ ${ipArray[0]} -le 255 ]] &&  [[ ${ipArray[1]} -le 255 ]] && [[ ${ipArray[2]} -le 255 ]] && [[ ${ipArray[3]} -le 255 ]]; then
 			echo "YAY2"
 		else
-			echo echo "${FAIL}[-]${NC} Please provide an IP address. Exiting..."
+			echo echo "${FAIL}[-]${NC} Please provide a valid IP address and port. Exiting..."
 			exit 1
 		fi
 
