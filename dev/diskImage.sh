@@ -64,14 +64,63 @@ function usb {
 
 			if diskutil apfs eraseVolume "${disk}" -name Untitled -passphrase "${passphrase}" >>/dev/null  ; then
 				echo "${INFO}[*]${NC} Disk erased. Passphrase: ${passphrase}"
-			fi
+			fi 
+		else
+			echo "${FAIL}[-]${NC} Provided disk does not exist. Exiting..."
+		fi
+	else
+		echo "${FAIL}[-]${NC} Please prove a disk name. Exiting..."
+	fi
+}
 
-		else 
-			echo "Volume don't exists"
+function network {
+	
+	local ip=${1}
+
+	echo "${INFO}[*]${NC} Checking IP Address..."
+
+	if [ ! "${ip}" == "none" ] && [[ "${ip}" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]] ; then
+
+		IFS="."
+
+		read -r -a ipArray <<< "$ip"
+
+		if [[ ${ipArray[0]} -le 255 ]] &&  [[ ${ipArray[1]} -le 255 ]] && [[ ${ipArray[2]} -le 255 ]] && [[ ${ipArray[3]} -le 255 ]]; then
+			echo "YAY2"
+		else
+			echo echo "${FAIL}[-]${NC} Please provide an IP address. Exiting..."
 			exit 1
 		fi
 
-	fi 
+		IFS=$'\n'
+
+		# COLLECTION
+
+	else
+		echo "${FAIL}[-]${NC} Please provide an IP address. Exiting..."
+		exit 1
+	fi
+}
+function main {
+
+	
+	local passphrase
+
+	
+	while getopts ":hdnu" opt; do
+		case ${opt} in
+			h ) usage
+				;;
+			d ) disk 
+				;;
+			n ) local ip=${2:-"none"}; network "${ip}"
+			;;
+			u ) local disk=${2:-"none"}; usb "${disk}"
+				;;
+			\? ) usage
+				;;
+		esac
+	done
 }
 
 main "$@"
