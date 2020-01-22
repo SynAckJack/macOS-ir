@@ -7,19 +7,32 @@ set -euo pipefail
 # -u prevent using undefined variables
 # -o pipefail force pipelines to fail on first non-zero status code
 
+IFS=$'\n'
+
 FAIL=$(echo -en '\033[01;31m')
 PASS=$(echo -en '\033[01;32m')
 NC=$(echo -en '\033[0m')
 INFO=$(echo -en '\033[01;35m')
 WARN=$(echo -en '\033[1;33m')
 
-function main {
 
-	local disk=${1:-"none"}
+function usage {
+	cat << EOF
+	./diskImage [-u | -n | -d | -h] [USB Name | IP Address]
+	Usage:
+		-h		- Show this message
+		-u		- Copy extracted data to provided USB drive. ** NOTE: DRIVE WILL BE ERASED **
+		-d		- Copy extracted data to a disk image. ** NOTE: This disk image will be created using APFS and encrypted **
+		-n		- Transfer collected data to another device using nc
+		
+EOF
+		exit 0
+}
+
+function disk {
+	
+	local directory
 	local passphrase
-
-	if [ "${disk}" == "none" ] ; then
-		local directory
 
 		directory="$HOME/$(head -c24 < /dev/urandom | base64 | tr -cd '[:alnum:]')"
 
@@ -32,8 +45,15 @@ function main {
 			echo "${FAIL}[-]${NC} $(directory) already exists. Exiting..."
 			exit 1
 		fi
-	else
-		echo "${INFO}[*]${NC} Checking disk..."
+}
+
+function usb {
+
+	local disk=${1}
+	
+	echo "${INFO}[*]${NC} Checking disk... ${disk}"
+
+	if [ ! "${disk}" == "none" ] ; then
 
 		if [[ -e /Volumes/"${disk}" ]] ; then
 			echo "${WARN}[!]${NC} Continuing will erase this disk, proceeding in 5 seconds..."
