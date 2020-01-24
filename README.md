@@ -1,4 +1,4 @@
-# macOS-ir
+# macOS-ir    [![Build Status](https://travis-ci.com/SynAckJack/macOS-ir.svg?token=whrMKztabPiqqCNsQeJt&branch=master)](https://travis-ci.com/SynAckJack/macOS-ir)
 4th Year Ethical Hacking Dissertation. Based on Incident Response for macOS, this tool will gather vital data from a macOS system that has been compromised and present it in an easy-to-read format.
 
 ## Requirements
