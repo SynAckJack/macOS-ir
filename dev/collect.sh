@@ -67,9 +67,11 @@ function usb {
 			fi 
 		else
 			echo "${FAIL}[-]${NC} Provided disk does not exist. Exiting..."
+			exit 1
 		fi
 	else
-		echo "${FAIL}[-]${NC} Please prove a disk name. Exiting..."
+		echo "${FAIL}[-]${NC} Please provide a disk name. Exiting..."
+		exit 1
 	fi
 }
 
@@ -143,10 +145,6 @@ function network {
 }
 function main {
 
-	
-	local passphrase
-
-	
 	while getopts ":hdnu" opt; do
 		case ${opt} in
 			h ) usage
@@ -154,13 +152,17 @@ function main {
 			d ) disk 
 				;;
 			n ) local ip=${2:-"none"}; network "${ip}"
-			;;
+				;;
 			u ) local disk=${2:-"none"}; usb "${disk}"
 				;;
-			\? ) usage
+			: ) usage
+				;;
+			* ) usage
 				;;
 		esac
 	done
+
+	# Add statement to check the number of arguments and if equal to 1 then call usage.
 }
 
 main "$@"
