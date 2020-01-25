@@ -31,9 +31,7 @@ function decrypt {
 	local passphrase
 	local tarFile
 
-	tarFile=$(find . -name '*.tar' )
-	echo "${tarFile}"
-	
+	tarFile=$(find . -name '*.tar' )	
 	mkdir output
 
 	echo "${INFO}[*]${NC} Decrypting .tar file. Please enter passphrase: "
@@ -86,7 +84,20 @@ function disk {
 }
 
 function usb {
-	true
+	
+	local usbName
+
+	usbName="$1"
+
+	echo "${INFO}[*]${NC} Checking USB..."
+
+	if cd /Volumes/"${usbName}" ; then
+		echo "${PASS}[+]${NC} USB exists and is available. Locating .tar..."
+		decrypt
+	else
+		echo "${FAIL}[-]${NC} Unable to access USB. Exitting..."
+		exit 1
+	fi
 }
 
 function requirements {
