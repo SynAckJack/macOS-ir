@@ -86,16 +86,31 @@ function disk {
 function usb {
 	
 	local usbName
+	local tarFile
+	local passphrase
 
 	usbName="$1"
 
-	echo "${INFO}[*]${NC} Checking USB..."
+	echo "${INFO}[*]${NC} Checking USB. Please enter the passphrase..."
+	read -rp 'Passphrase: ' passphrase
+ 
+	if diskutil apfs unlockVolume "${usbName}" -passphrase "${passphrase}"; then
 
-	if cd /Volumes/"${usbName}" ; then
-		echo "${PASS}[+]${NC} USB exists and is available. Locating .tar..."
-		decrypt
+		if cd /Volumes/"${usbName}" ; then
+			echo "${PASS}[+]${NC} USB exists and is available. Locating .tar..."
+			mkdir output
+			if tar -xvf output.tar -C output ; then
+				echo "${PASS}[+]${NC} .tar extracted to 'output' successfully..."
+			else
+				echo "${FAIL}[-]${NC} Failed to extract .tar. Exiting..."
+				exit 1
+			fi	
+		else
+			echo "${FAIL}[-]${NC} Unable to access USB. Exiting..."
+			exit 1
+		fi
 	else
-		echo "${FAIL}[-]${NC} Unable to access USB. Exitting..."
+		echo "${FAIL}[-]${NC} Incorrect passphrase. Exiting..."
 		exit 1
 	fi
 }
