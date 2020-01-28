@@ -18,13 +18,13 @@ WARN=$(echo -en '\033[1;33m')
 
 function usage {
 	cat << EOF
-	./diskImage [-u | -n | -d | -h] [USB Name | IP Address:Port]
-	Usage:
-		-h		- Show this message
-		-u		- Copy extracted data to provided USB drive. ** NOTE: DRIVE WILL BE ERASED **
-		-d		- Copy extracted data to a disk image. ** NOTE: This disk image will be created using APFS and encrypted **
-		-n		- Transfer collected data to another device using nc. Takes IP and Port in format <IP ADDRESS>:<PORT>
-		
+./diskImage [-u | -n | -d | -h] [USB Name | IP Address:Port]
+Usage:
+	-h		- Show this message
+	-u		- Copy extracted data to provided USB drive. ** NOTE: DRIVE WILL BE ERASED **
+	-d		- Copy extracted data to a disk image. ** NOTE: This disk image will be created using APFS and encrypted **
+	-n		- Transfer collected data to another device using nc. Takes IP and Port in format <IP ADDRESS>:<PORT>
+	
 EOF
 		exit 0
 }
@@ -33,14 +33,33 @@ function disk {
 	
 	local directory
 	local passphrase
+	local dirSize
 
 		directory="$HOME/$(head -c24 < /dev/urandom | base64 | tr -cd '[:alnum:]')"
 
 		echo "${INFO}[*]${NC} No disk provided. Creating directory at ${directory}"
 
 		if [[ ! -e "$directory" ]] ; then
-			mkdir "$directory"
+			mkdir "$directory" && cd "$directory"
+
 			# succseffuly created. Now copy data to this directory. Once all collected get total size of folder and then create an encrypted disk image with random password.
+
+			echo "${INFO}[*]${NC} Collected data. Creating disk image..."
+
+			dirSize=$(du -sk . | tr -cd '[:digit:]')
+			echo "$PWD"
+			dirSize=$((dirSize + 102400))
+
+			passphrase=$(head -c24 < /dev/urandom | base64 | tr -cd '[:alnum:]')
+
+			if echo -n "${passphrase}" | hdiutil create -fs apfs -size "${dirSize}"kb -stdinpass -encryption AES-128 -srcfolder "${directory}" "${directory}/output".dmg  ; then
+				echo "${PASS}[+]${NC} Succesfully created disk image with data at ${directory}/output.dmg."
+				echo "${INFO}[*]${NC} Passphrase for image: ${passphrase}"
+			else
+				echo "${FAIL}[-]${NC} Failed to create disk image. Exiting..."
+				exit 1
+			fi
+			
 		else 
 			echo "${FAIL}[-]${NC} $(directory) already exists. Exiting..."
 			exit 1
@@ -49,11 +68,11 @@ function disk {
 
 function usb {
 
-	local disk=${1}
-	
-	echo "${INFO}[*]${NC} Checking disk... ${disk}"
+	local disk=${1}	
 
 	if [ ! "${disk}" == "none" ] ; then
+
+		echo "${INFO}[*]${NC} Checking disk ${disk}..."
 
 		if [[ -e /Volumes/"${disk}" ]] ; then
 			echo "${WARN}[!]${NC} Continuing will erase this disk, proceeding in 5 seconds..."
@@ -62,8 +81,26 @@ function usb {
 
 			passphrase="$(head -c24 < /dev/urandom | base64 | tr -cd '[:alnum:]')"
 
-			if diskutil apfs eraseVolume "${disk}" -name Untitled -passphrase "${passphrase}" >>/dev/null  ; then
+			if diskutil apfs eraseVolume "${disk}" -name "${disk}" -passphrase "${passphrase}" >>/dev/null  ; then
+				lHostName="$(scutil --get LocalHostName)"
+
 				echo "${INFO}[*]${NC} Disk erased. Passphrase: ${passphrase}"
+
+				echo "${INFO}[*]${NC} Performing md5 hash of files..."
+
+				if find . -type f -exec md5sum '{}' \; >> "${lHostName}"-md5sum.txt ; then
+					echo "${PASS}[+]${NC} MD5 hash complete. Stored in: ${lHostName}-md5.txt"
+				else
+					echo "${WARN}[!]${NC} MD5 hash failed. Continuing..."
+				fi
+
+				if tar cvf /Volumes/"${disk}"/output.tar ./* > /dev/null 2>&1 ; then
+					echo "${PASS}[+]${NC} Data successfully copied..."
+				else
+					echo "${FAIL}[-]${NC} Failed to copy data. Exiting..."
+					exit 1
+				fi
+					
 			fi 
 		else
 			echo "${FAIL}[-]${NC} Provided disk does not exist. Exiting..."
@@ -110,7 +147,7 @@ function network {
 		if tar cvf output.tar ./* > /dev/null 2>&1 ; then
 			lHostName="$(scutil --get LocalHostName)"
 			passphrase=$(head -c24 < /dev/urandom | base64 | tr -cd '[:alnum:]')
-			if openssl enc -e -aes256 -in output.tar -out "${lHostName}".tar.gz -pass pass:"${passphrase}"; then
+			if openssl enc -e -aes256 -in output.tar -out "${lHostName}".tar -pass pass:"${passphrase}"; then
 				echo "${PASS}[+]${NC} Successfully compressed and encrypted data. Passphrase: ${passphrase}"
 				rm output.tar
 			else
@@ -134,7 +171,7 @@ function network {
 
 		echo "${INFO}[*]${NC} Waiting on connection..."
 
-		if tar -zcf - . | pv -f | nc -n -w5 "${ip}" "${port}" ; then
+		if tar -zcf - . | pv -f | nc -n "${ip}" "${port}" ; then
 			echo "${PASS}[+]${NC} Successfully transferred data. Remember passphrase: ${passphrase}"
 		fi
 
@@ -154,8 +191,6 @@ function main {
 			n ) local ip=${2:-"none"}; network "${ip}"
 				;;
 			u ) local disk=${2:-"none"}; usb "${disk}"
-				;;
-			: ) usage
 				;;
 			* ) usage
 				;;
