@@ -44,7 +44,7 @@ function decrypt {
  			echo "${PASS}[+]${NC} Successfully decrypted .tar to directory: output."
  			break
  		else
- 			echo "${FAIL}[-]${NC} Failed to decrypt .tar. Please enter new passphrase or 'q' to exit..."
+ 			echo "${WARN}[!]${NC} Failed to decrypt .tar. Please enter new passphrase or 'q' to exit..."
  			read -rp 'Passphrase: ' passphrase
  		fi
   	done
@@ -102,7 +102,7 @@ function usb {
 			if tar -xvf output.tar -C output ; then
 				echo "${PASS}[+]${NC} .tar extracted to 'output' successfully..."
 			else
-				echo "${FAIL}[-]${NC} Failed to extract .tar. Exiting..."
+				echo "${WARN}[!]${NC} Failed to extract .tar. Exiting..."
 				exit 1
 			fi	
 		else
