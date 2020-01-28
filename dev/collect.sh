@@ -19,12 +19,14 @@ declare -a LOGS
 
 function usage {
 	cat << EOF
-./diskImage [-u | -n | -d | -h] [USB Name | IP Address:Port]
+./collect.sh [-u | -n | -d | -h] [USB Name | IP Address:Port]
 Usage:
 	-h		- Show this message
 	-u		- Copy extracted data to provided USB drive. ** NOTE: DRIVE WILL BE ERASED **
 	-d		- Copy extracted data to a disk image. ** NOTE: This disk image will be created using APFS and encrypted **
 	-n		- Transfer collected data to another device using nc. Takes IP and Port in format <IP ADDRESS>:<PORT>
+
+** NOTE: For collection to access all files, 'Full Disk Access' needs to be given to Terminal.app. If not, some data will be missing **
 	
 EOF
 		exit 0
