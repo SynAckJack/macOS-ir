@@ -14,6 +14,7 @@ PASS=$(echo -en '\033[01;32m')
 NC=$(echo -en '\033[0m')
 INFO=$(echo -en '\033[01;35m')
 WARN=$(echo -en '\033[1;33m')
+declare -a LOGS
 
 
 function usage {
@@ -28,6 +29,22 @@ Usage:
 EOF
 		exit 0
 }
+function log {
+	
+	local type
+	local message
+
+	type=$1
+	message=$2
+
+	LOGS+=("$(date +%H:%M:%S), ${type}, ${message}")
+}
+
+function collect {
+	
+	echo "${INFO}[*]${NC} Started collection...Writing to collect.log"
+	log "INFO" "Started Collection"
+}
 
 function disk {
 	
@@ -37,12 +54,12 @@ function disk {
 
 		directory="$HOME/$(head -c24 < /dev/urandom | base64 | tr -cd '[:alnum:]')"
 
-		echo "${INFO}[*]${NC} No disk provided. Creating directory at ${directory}"
+		echo "${INFO}[*]${NC} Creating directory at ${directory}"
 
 		if [[ ! -e "$directory" ]] ; then
 			mkdir "$directory" && cd "$directory"
 
-			# succseffuly created. Now copy data to this directory. Once all collected get total size of folder and then create an encrypted disk image with random password.
+			# COLLECT
 
 			echo "${INFO}[*]${NC} Collected data. Creating disk image..."
 
@@ -86,6 +103,8 @@ function usb {
 
 				echo "${INFO}[*]${NC} Disk erased. Passphrase: ${passphrase}"
 
+				#COLLECT
+
 				echo "${INFO}[*]${NC} Performing md5 hash of files..."
 
 				if find . -type f -exec md5sum '{}' \; >> "${lHostName}"-md5sum.txt ; then
@@ -118,10 +137,9 @@ function network {
 	local port
 	local passphrase
 	local lHostName
+	local directory
 
 	echo "${INFO}[*]${NC} Checking IP Address..."
-
-	
 
 	if [ ! "${ip}" == "none" ] && [[ "${ip}" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\:[0-9]{1,5}$ ]] ; then
 
@@ -141,7 +159,20 @@ function network {
 
 		IFS=$'\n'
 
+		directory="$HOME/$(head -c24 < /dev/urandom | base64 | tr -cd '[:alnum:]')"
+
+		echo "${INFO}[*]${NC} Creating temporary directory at ${directory}"
+	
+		if [[ ! -e "$directory" ]] ; then
+			mkdir "$directory" && cd "$directory"
+		else
+			echo "${FAIL}[-]${NC} Failed to create directory. Exiting..."
+			exit 1
+		fi
+
 		# COLLECTION
+
+		collect
 
 		# Compress files
 		if tar cvf output.tar ./* > /dev/null 2>&1 ; then
@@ -174,7 +205,6 @@ function network {
 		if tar -zcf - . | pv -f | nc -n "${ip}" "${port}" ; then
 			echo "${PASS}[+]${NC} Successfully transferred data. Remember passphrase: ${passphrase}"
 		fi
-
 	else
 		echo "${FAIL}[-]${NC} Please provide an IP address. Exiting..."
 		exit 1
@@ -186,7 +216,7 @@ function main {
 		case ${opt} in
 			h ) usage
 				;;
-			d ) disk 
+			d ) collect 
 				;;
 			n ) local ip=${2:-"none"}; network "${ip}"
 				;;
