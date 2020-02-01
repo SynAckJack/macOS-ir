@@ -58,12 +58,39 @@ function cSysdiagnose {
 
 }
 
+function cUser {
+
+	mkdir "User"
+
+	echo -e "\nGathering user information"
+	echo "-------------------------------------------------------------------------------"
+
+	while IFS=$'\n' read -r users; do
+
+		mkdir User/"${users}"
+
+		dscacheutil -q user -a name "${users}" >> User/users.txt
+		homeDir=$(eval echo ~"${users}")
+
+		find "${homeDir}" -name ".*" -exec cp {} User/"${users}" \;
+
+
+	done < <(dscl . list /Users | grep -v '_')
+
+	echo -e "\nGathering login history"
+	echo "-------------------------------------------------------------------------------"
+	
+	last >> login.txt
+
+}
+
 function collect {
 	
 	echo "${INFO}[*]${NC} Started collection...Writing to collect.log"
 	log "INFO" "Started Collection"
 
 	cSysdiagnose
+	cUser
 
 }
 
