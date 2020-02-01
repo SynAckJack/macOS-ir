@@ -116,6 +116,65 @@ function cApplication {
 	done < <(system_profiler SPApplicationsDataType | grep -E -B6 "Location:" | grep -E '^    .*:' | grep -E -A3 -B2 'Obtained from: Identified Developer|Obtained from: Unknown' | grep 'Location:' | grep -E -v '/Library/Image Capture|/Library/Printers')
 }
 
+function cSecurity {
+
+	echo -e "\nGathering System Security Data"
+	echo "-------------------------------------------------------------------------------"
+
+	if csrutil status | grep -q 'enabled' ; then
+		status="enabled"
+	else
+		status="disabled"
+	fi
+
+	echo " - System Integrity Protection: ${status}" >> security.txt
+
+	if /usr/libexec/firmwarecheckers/eficheck/eficheck \
+		--integrity-check | grep -q 'No changes' ; then
+	 	status="passed"
+	 else
+	 	status="failed"
+	fi
+
+	echo " - EFI Integrity: ${status}" >> security.txt
+
+	mrt="$(softwareupdate --history --all | grep MRT | awk -F "softwareupdated" 'NR > 1 { exit }; 1' | awk -F " " ' { print $2 } ')"
+
+	echo " - MRT Version: ${mrt}" >> security.txt
+
+	if [[ "$(defaults read /Library/Preferences/com.apple.alf globalstate)" -ge 1 ]] ; then
+		status="enabled"
+	else 
+		status="disabled"
+	fi
+
+	echo " - macOS Firewall: ${status}" >> security.txt
+
+	if [[ "$(defaults read /Library/Preferences/com.apple.alf stealthenabled)" -ge 1 ]] ; then
+		status="enabled"
+	else 
+		status="disabled"
+	fi
+
+	echo " - macOS Stealth Firewall: ${status}" >> security.txt
+
+	# shellcheck disable=SC2012
+	date="$(ls -l /System/Library/CoreServices/XProtect.bundle/Contents/Resources/XProtect.plist | awk -F " " ' { print $6" "$7" "$8 } ')"
+
+	echo " - XProtect last updated: ${date}" >> security.txt
+
+	echo " - Current macOS Version: $(sw_vers -productVersion)" >> security.txt
+
+	if ! softwareupdate -l | grep -q 'No new' ; then
+		status="Up-to-date"
+	else
+		status="Update available"
+	fi
+
+	echo " - macOS update status: ${status}" >> security.txt
+
+}
+
 function collect {
 	
 	echo "${INFO}[*]${NC} Started collection...Writing to collect.log"
