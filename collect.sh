@@ -38,7 +38,7 @@ function log {
 
 	type=$1
 	message=$2
-	if [[ ! ${type} == "FINISHED" ]] ; then
+	if [[ ! "${type}" == "FINISHED" ]] ; then
 		LOGS+=("$(date +%H:%M:%S), ${type}, ${message}")
 	else
 		LOGS+=("$(date +%H:%M:%S), ${type}, ${message}")
@@ -50,10 +50,21 @@ function log {
 	fi
 }
 
+function cSysdiagnose {
+
+	echo -e "\nRunning sysdiagnose. This will take a while."
+	echo "-------------------------------------------------------------------------------"
+	sudo sysdiagnose -f . -b
+
+}
+
 function collect {
 	
 	echo "${INFO}[*]${NC} Started collection...Writing to collect.log"
 	log "INFO" "Started Collection"
+
+	cSysdiagnose
+
 }
 
 function disk {
@@ -258,7 +269,7 @@ function main {
 		case ${opt} in
 			h ) usage
 				;;
-			d ) collect 
+			d ) disk 
 				;;
 			n ) local ip=${2:-"none"}; network "${ip}"
 				;;
