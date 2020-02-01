@@ -84,6 +84,38 @@ function cUser {
 
 }
 
+function cApplication {
+
+	echo -e "\nGathering Application Data"
+	echo "-------------------------------------------------------------------------------"
+
+	system_profiler SPApplicationsDataType >> Applications.txt
+
+	echo -e "\nGathering Install History"
+	echo "-------------------------------------------------------------------------------"
+	system_profiler SPInstallHistoryDataType >> InstallHistory.txt
+
+	echo -e "\nGathering Currently Running Processes"
+	echo "-------------------------------------------------------------------------------"
+
+	# shellcheck disable=SC2009
+	ps aux | grep -v '_' | sort >> processes.txt
+
+	echo -e "\nGenerating Hash of Non-Apple Application Executables"
+	echo "-------------------------------------------------------------------------------"
+
+	local directory
+
+	while IFS=$'\n' read -r app; do
+
+		directory=$(echo "${app}" | awk -F ': ' ' { print $NF } ' )
+		echo -e "\n ${directory}" >> hash.txt
+
+		find "${directory}" -type f -perm +0111 -exec shasum {} \; >> hash.txt
+
+	done < <(system_profiler SPApplicationsDataType | grep -E -B6 "Location:" | grep -E '^    .*:' | grep -E -A3 -B2 'Obtained from: Identified Developer|Obtained from: Unknown' | grep 'Location:' | grep -E -v '/Library/Image Capture|/Library/Printers')
+}
+
 function collect {
 	
 	echo "${INFO}[*]${NC} Started collection...Writing to collect.log"
@@ -91,6 +123,7 @@ function collect {
 
 	cSysdiagnose
 	cUser
+	cApplication
 
 }
 
