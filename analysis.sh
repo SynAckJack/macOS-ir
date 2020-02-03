@@ -99,7 +99,24 @@ function network {
 }
 
 function disk {
-	true
+	
+	local diskName
+	local tarFile
+	local passphrase
+
+	diskName="$1"
+
+	echo "${INFO}[*]${NC} Checking disk. Please enter the passphrase..."
+	read -rp 'Passphrase: ' passphrase
+
+	if echo -n "${passphrase}" | hdiutil attach "${diskName}" -stdinpass  ; then
+		echo "${PASS}[+]${NC} Succesfully attached disk."
+		log "PASS" "Disk mounted"
+	else
+		echo "${FAIL}[-]${NC} Incorrect passphrase. Exiting..."
+		log "ERROR" "Disk mount failed"
+		exit 1
+	fi
 }
 
 function usb {
