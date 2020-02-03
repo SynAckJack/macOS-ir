@@ -200,6 +200,18 @@ function cSystemInfo {
 	echo -e "\nSystem Uptime: \t$(uptime)" >> systeminfo.txt
 
 }
+function cNetworkInfo {
+
+	if ! mkdir "network" ; then
+		echo "${FAIL}[-]${NC} Couldn't make network directory. Exiting..."
+		exit 1
+	fi
+
+	echo -e "\nGathering network info"
+	echo "-------------------------------------------------------------------------------"
+	echo -e "\n-- ifconfig: \n$(ifconfig)" >> network/ifconfig.txt
+	echo -e "\n-- arp -a: \n$(arp -a)" >> network/arp.txt
+}
 function collect {
 	
 	echo "${INFO}[*]${NC} Started collection...Writing to collect.log"
