@@ -60,46 +60,59 @@ function cSysdiagnose {
 
 function cUser {
 
-	mkdir "User"
+	if ! mkdir "User" ; then
+		echo "${FAIL}[-]${NC} Couldn't make User directory. Exiting..."
+		exit 1
+	fi
 
 	echo -e "\nGathering user information"
 	echo "-------------------------------------------------------------------------------"
 
+	set +e
+
 	while IFS=$'\n' read -r users; do
 
-		mkdir User/"${users}"
+		mkdir User/"${users}" 2> /dev/null
 
 		dscacheutil -q user -a name "${users}" >> User/users.txt
 		homeDir=$(eval echo ~"${users}")
 
-		find "${homeDir}" -name ".*" -exec cp {} User/"${users}" \;
+		find "${homeDir}" -name ".*" -exec cp {} User/"${users}" \; 2> /dev/null
 
 
 	done < <(dscl . list /Users | grep -v '_')
 
+	set -e
+
 	echo -e "\nGathering login history"
 	echo "-------------------------------------------------------------------------------"
 	
-	last >> login.txt
+	echo -e "\n-- last: \n$(last)" >> last.txt
+
 
 }
 
 function cApplication {
 
+	if ! mkdir "Applications" ; then
+		echo "${FAIL}[-]${NC} Couldn't make disk directory. Exiting..."
+		exit 1
+	fi	
+
 	echo -e "\nGathering Application Data"
 	echo "-------------------------------------------------------------------------------"
 
-	system_profiler SPApplicationsDataType >> Applications.txt
+	echo -e "\n --SPApplicationsDataType \n$(system_profiler SPApplicationsDataType)" >> Applications/Applications.txt
 
 	echo -e "\nGathering Install History"
 	echo "-------------------------------------------------------------------------------"
-	system_profiler SPInstallHistoryDataType >> InstallHistory.txt
+	echo -e "\n --SPInstallHistoryDataType \n$(system_profiler SPInstallHistoryDataType)" >> Applications/InstallHistory.txt
 
 	echo -e "\nGathering Currently Running Processes"
 	echo "-------------------------------------------------------------------------------"
 
 	# shellcheck disable=SC2009
-	ps aux | grep -v '_' | sort >> processes.txt
+	echo -e "\n-- ps aux \n$(ps aux | grep -v '_' | sort)" >> Applications/processes.txt
 
 	echo -e "\nGenerating Hash of Non-Apple Application Executables"
 	echo "-------------------------------------------------------------------------------"
