@@ -26,6 +26,25 @@ EOF
 		exit 0
 }
 
+function log {
+	
+	local type
+	local message
+
+	type=$1
+	message=$2
+	if [[ ! ${type} == "FINISHED" ]] ; then
+		LOGS+=("$(date +%H:%M:%S), ${type}, ${message}")
+	else
+		LOGS+=("$(date +%H:%M:%S), ${type}, ${message}")
+		lHostName="$(scutil --get LocalHostName)"
+
+		for i in "${LOGS[@]}" ; do
+			echo "	${i}"  >> "${lHostName}-$(date +%H:%M:%S)-LOG.csv"
+		done
+	fi
+}
+
 function decrypt {
 	
 	local passphrase
