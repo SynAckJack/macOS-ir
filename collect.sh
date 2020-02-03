@@ -193,11 +193,14 @@ function cSystemInfo {
 	echo -e "\nGathering system info"
 	echo "-------------------------------------------------------------------------------"	
 
-	echo -e "Date: \t$(date)" >> systeminfo.txt
-	echo -e "\nHostname: \t$(hostname)" >> systeminfo.txt
-	echo -e "\nSoftware Version: \t$(sw_vers -productVersion)" >> systeminfo.txt
-	echo -e "\nKernel Info: \t$(uname -a)" >> systeminfo.txt
-	echo -e "\nSystem Uptime: \t$(uptime)" >> systeminfo.txt
+
+	{ 
+		echo -e "Date: \t$(date)"
+		echo -e "\nHostname: \t$(hostname)"
+		echo -e "\nSoftware Version: \t$(sw_vers -productVersion)"
+		echo -e "\nKernel Info: \t$(uname -a)"
+		echo -e "\nSystem Uptime: \t$(uptime)" 
+	} >> systeminfo.txt
 
 }
 function cNetworkInfo {
@@ -211,6 +214,18 @@ function cNetworkInfo {
 	echo "-------------------------------------------------------------------------------"
 	echo -e "\n-- ifconfig: \n$(ifconfig)" >> network/ifconfig.txt
 	echo -e "\n-- arp -a: \n$(arp -a)" >> network/arp.txt
+}
+function cDiskInfo {
+
+	if ! mkdir "disk" ; then
+		echo "${FAIL}[-]${NC} Couldn't make disk directory. Exiting..."
+		exit 1
+	fi
+
+	echo -e "\nGathering disk info"
+	echo "-------------------------------------------------------------------------------"
+	echo -e "\n-- diskutil list: \n$(diskutil list)" >> disk/diskutil.txt
+	echo -e "\n-- df -h: \n$(df -h)" >> disk/df.txt
 }
 function collect {
 	
