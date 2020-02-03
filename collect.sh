@@ -19,12 +19,12 @@ declare -a LOGS
 
 function usage {
 	cat << EOF
-./collect.sh [-u | -n | -d | -h] [USB Name | IP Address:Port]
+sudo ./collect.sh [-u | -n | -d | -h] [USB Name | IP Address:Port]
 Usage:
-	-h		- Show this message
 	-u		- Copy extracted data to provided USB drive. ** NOTE: DRIVE WILL BE ERASED **
 	-d		- Copy extracted data to a disk image. ** NOTE: This disk image will be created using APFS and encrypted **
 	-n		- Transfer collected data to another device using nc. Takes IP and Port in format <IP ADDRESS>:<PORT>
+	-h		- Show this message
 
 ** NOTE: For collection to access all files, 'Full Disk Access' needs to be given to Terminal.app. If not, some data will be missing **
 	
@@ -38,7 +38,7 @@ function log {
 
 	type=$1
 	message=$2
-	if [[ ! "${type}" == "FINISHED" ]] ; then
+	if [[ ! ${type} == "FINISHED" ]] ; then
 		LOGS+=("$(date +%H:%M:%S), ${type}, ${message}")
 	else
 		LOGS+=("$(date +%H:%M:%S), ${type}, ${message}")
@@ -124,7 +124,7 @@ function cApplication {
 		directory=$(echo "${app}" | awk -F ': ' ' { print $NF } ' )
 		echo -e "\n ${directory}" >> hash.txt
 
-		find "${directory}" -type f -perm +0111 -exec shasum {} \; >> hash.txt
+		find "${directory}" -type f -perm +0111 -exec shasum {} \; >> Applications/hash.txt		
 
 	done < <(system_profiler SPApplicationsDataType | grep -E -B6 "Location:" | grep -E '^    .*:' | grep -E -A3 -B2 'Obtained from: Identified Developer|Obtained from: Unknown' | grep 'Location:' | grep -E -v '/Library/Image Capture|/Library/Printers')
 }
@@ -203,6 +203,7 @@ function cSystemInfo {
 	} >> systeminfo.txt
 
 }
+
 function cNetworkInfo {
 
 	if ! mkdir "network" ; then
@@ -215,6 +216,7 @@ function cNetworkInfo {
 	echo -e "\n-- ifconfig: \n$(ifconfig)" >> network/ifconfig.txt
 	echo -e "\n-- arp -a: \n$(arp -a)" >> network/arp.txt
 }
+
 function cDiskInfo {
 
 	if ! mkdir "disk" ; then
@@ -227,14 +229,19 @@ function cDiskInfo {
 	echo -e "\n-- diskutil list: \n$(diskutil list)" >> disk/diskutil.txt
 	echo -e "\n-- df -h: \n$(df -h)" >> disk/df.txt
 }
+
 function collect {
 	
 	echo "${INFO}[*]${NC} Started collection...Writing to collect.log"
 	log "INFO" "Started Collection"
 
 	cSysdiagnose
-	cUser
+	cSystemInfo
+	cDiskInfo
+	cNetworkInfo
+	cSecurity
 	cApplication
+	cUser
 
 }
 
@@ -450,7 +457,7 @@ function checkSudo {
 function main {
 
 	checkSudo
-	
+
 	while getopts ":hdnu" opt; do
 		case ${opt} in
 			h ) usage
@@ -465,6 +472,7 @@ function main {
 				;;
 		esac
 	done
+
 
 	log "FINISHED" "Successfully completed ✅"
 

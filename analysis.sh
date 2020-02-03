@@ -161,7 +161,7 @@ function main {
 
 	while getopts ":hdnu" opt; do
 		case ${opt} in
-			h ) decrypt
+			h ) usage
 				;;
 			d ) local diskImage=${2:-"none"}; disk "${diskImage}"
 				;;
