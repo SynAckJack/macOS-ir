@@ -188,6 +188,18 @@ function cSecurity {
 
 }
 
+function cSystemInfo {
+
+	echo -e "\nGathering system info"
+	echo "-------------------------------------------------------------------------------"	
+
+	echo -e "Date: \t$(date)" >> systeminfo.txt
+	echo -e "\nHostname: \t$(hostname)" >> systeminfo.txt
+	echo -e "\nSoftware Version: \t$(sw_vers -productVersion)" >> systeminfo.txt
+	echo -e "\nKernel Info: \t$(uname -a)" >> systeminfo.txt
+	echo -e "\nSystem Uptime: \t$(uptime)" >> systeminfo.txt
+
+}
 function collect {
 	
 	echo "${INFO}[*]${NC} Started collection...Writing to collect.log"
