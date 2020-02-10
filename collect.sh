@@ -14,6 +14,7 @@ INFO=$(echo -en '\033[01;35m')
 WARN=$(echo -en '\033[1;33m')
 
 declare -a LOGS
+declare -a USERS
 
 function usage {
 	cat << EOF
@@ -47,6 +48,32 @@ function log {
 			echo "	${i}"  >> "${lHostName}-$(date +%H:%M:%S)-LOG.csv"
 		done
 	fi
+}
+
+
+function cFiles {
+
+	echo -e "\nGathering permissions and hash of user files"
+	echo "-------------------------------------------------------------------------------"
+
+	for user in "${USERS[@]}" ; do
+
+		if ! [[ "${user}" == "root" || "${user}" ==  "nobody" || "${user}" == "daemon" ]] ; then
+			mkdir -p "Files/${user}"
+			find "/Users/${user}" ! -path "/Users/${user}/Library/*" -type f -exec stat -n -t "%d/%m/%y %R" -f "%Sp |  %Sa | %SB | " {} \; -exec shasum -a 256 {}  \; >> "Files/${user}/${user}-files.txt"
+		fi
+		
+	done
+
+	echo -e "\nGathering .fsventsd Folder"
+	echo "-------------------------------------------------------------------------------"
+
+	mkdir "FSEvents"
+
+	if ! sudo cp -r /.fseventsd/ FSEvents/ ; then
+		echo "${WARN}[!]${NC} Couldn't copy fseventsd folder..." 
+	fi
+		
 }
 
 function cSysdiagnose {
@@ -86,7 +113,11 @@ function cUser {
 	echo -e "\nGathering login history"
 	echo "-------------------------------------------------------------------------------"
 	
-	echo -e "\n-- last: \n$(last)" >> last.txt
+	echo -e "\n-- last: \n$(last)" >> User/last.txt
+
+	echo -e "\nGathering sudo users"
+	echo "-------------------------------------------------------------------------------"
+	cp /etc/sudoers User/
 
 
 }
