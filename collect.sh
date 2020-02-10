@@ -50,6 +50,41 @@ function log {
 	fi
 }
 
+function cLaunch {
+
+	local tempDirectory
+
+	echo -e "\nGathering launch information"
+	echo "-------------------------------------------------------------------------------"
+
+	if ! mkdir "Launch" ; then
+		echo "${FAIL}[-]${NC} Couldn't make Launch directory. Exiting..."
+		exit 1
+	fi
+
+	echo -e "\nGathering cronjobs"
+	echo "-------------------------------------------------------------------------------"
+
+	mkdir -p "Launch/Cron"
+
+	tempDirectory="Launch/Cron"
+
+	while IFS=$'\n' read -r user; do
+
+		if sudo crontab -u "${user}" -l 2> /dev/null | grep -c 'No crontab' >> /dev/null ; then
+			mkdir -p "${tempDirectory}/${user}"
+			if sudo cp -R /usr/lib/cron/jobs/* "${tempDirectory}/${user}"/ ; then
+				log "INFO" "cron: ${user} copied."
+			else
+				log "WARN" "cron: ${user} not copied."
+
+			fi
+		fi
+		USERS+=("${user}")
+
+	done < <(dscl . list /Users | grep -v '_')
+}
+
 
 function cFiles {
 
