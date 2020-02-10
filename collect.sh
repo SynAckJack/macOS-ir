@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-#The following script will erase a disk passed to allow for preperation to copy retrieved data. It will format the drive in HFS+ and also encrypt this with a random password.
-
 set -euo pipefail
 # -e exit if any command returns non-zero status code
 # -u prevent using undefined variables
@@ -14,8 +12,8 @@ PASS=$(echo -en '\033[01;32m')
 NC=$(echo -en '\033[0m')
 INFO=$(echo -en '\033[01;35m')
 WARN=$(echo -en '\033[1;33m')
-declare -a LOGS
 
+declare -a LOGS
 
 function usage {
 	cat << EOF
@@ -31,6 +29,7 @@ Usage:
 EOF
 		exit 0
 }
+
 function log {
 	
 	local type
@@ -193,7 +192,6 @@ function cSystemInfo {
 	echo -e "\nGathering system info"
 	echo "-------------------------------------------------------------------------------"	
 
-
 	{ 
 		echo -e "Date: \t$(date)"
 		echo -e "\nHostname: \t$(hostname)"
@@ -269,7 +267,17 @@ function disk {
 			dirSize=$((dirSize + 102400))
 
 			passphrase=$(head -c24 < /dev/urandom | base64 | tr -cd '[:alnum:]')
-			# PERFORM MD5 HASH
+
+			echo "${INFO}[*]${NC} Performing shasum of files..."
+			log "INFO" "Shasum started"
+
+			if find . -type f -exec shasum -a 256 '{}' \; >> "${lHostName}"-shasum.txt ; then
+				echo "${PASS}[+]${NC} shasum completed. Stored in: ${lHostName}-shasum.txt"
+				log "PASS" "shasum completed"
+			else
+				echo "${WARN}[!]${NC} shasum failed. Continuing..."
+				log "WARNING" "shasum failed"
+			fi
 
 			if echo -n "${passphrase}" | hdiutil create -fs apfs -size "${dirSize}"kb -stdinpass -encryption AES-128 -srcfolder "${directory}" "${directory}/output".dmg  ; then
 				echo "${PASS}[+]${NC} Succesfully created disk image with data at ${directory}/output.dmg."
@@ -313,15 +321,15 @@ function usb {
 				log "INFO" "USB prepared. Passphrase: ${passphrase}"
 				#COLLECT
 
-				echo "${INFO}[*]${NC} Performing md5 hash of files..."
-				log "INFO" "MD5 started"
+				echo "${INFO}[*]${NC} Performing shasum of files..."
+				log "INFO" "Shasum started"
 
-				if find . -type f -exec md5sum '{}' \; >> "${lHostName}"-md5sum.txt ; then
-					echo "${PASS}[+]${NC} MD5 hash complete. Stored in: ${lHostName}-md5.txt"
-					log "PASS" "MD5 completed"
+				if find . -type f -exec shasum -a 256 '{}' \; >> "${lHostName}"-shasum.txt ; then
+					echo "${PASS}[+]${NC} Shasum complete. Stored in: ${lHostName}-shasum.txt"
+					log "PASS" "Shasum completed"
 				else
-					echo "${WARN}[!]${NC} MD5 hash failed. Continuing..."
-					log "WARNING" "MD5 failed"
+					echo "${WARN}[!]${NC} Shasum failed. Continuing..."
+					log "WARNING" "Shasum failed"
 				fi
 
 				if tar cvf /Volumes/"${disk}"/output.tar ./* > /dev/null 2>&1 ; then
@@ -415,15 +423,15 @@ function network {
 			exit 1
 		fi
 		
-		echo "${INFO}[*]${NC} Performing md5 hash of files..."
-		log "INFO" "MD5 started"
+		echo "${INFO}[*]${NC} Performing Shasum of files..."
+		log "INFO" "Shasum started"
 
-		if find . -type f -exec md5sum '{}' \; >> "${lHostName}"-md5sum.txt ; then
-			echo "${PASS}[+]${NC} MD5 hash complete. Stored in: ${lHostName}-md5.txt"
-			log "INFO" "MD5 completed"
+		if find . -type f -exec shasum -a 256 '{}' \; >> "${lHostName}"-shasum.txt ; then
+			echo "${PASS}[+]${NC} Shasum complete. Stored in: ${lHostName}-shasum.txt"
+			log "INFO" "Shasum completed"
 		else
-			echo "${WARN}[!]${NC} MD5 hash failed. Continuing..."
-			log "WARN" "MD5 failed"
+			echo "${WARN}[!]${NC} Shasum failed. Continuing..."
+			log "WARN" "Shasum failed"
 		fi
 
 		echo "${INFO}[*]${NC} Starting nc transfer to ${ipPort}..."
@@ -453,6 +461,15 @@ function checkSudo {
 	fi
 
 }
+
+# function checkXCode {
+
+# 	if ! xcode-select --install 2>&1 | grep -c 'already installed'  >> /dev/null; then
+# 		echo "${WARN}[!]${NC} XCode Tools must be installed. Please follow the prompt to install and then run again."
+# 		exit 1
+# 	fi
+
+# }
 
 function main {
 
