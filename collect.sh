@@ -83,6 +83,20 @@ function cLaunch {
 		USERS+=("${user}")
 
 	done < <(dscl . list /Users | grep -v '_')
+
+	echo -e "\nGathering Launch Agents and Daemons"
+	echo "-------------------------------------------------------------------------------"
+
+	declare -a LaunchPaths=("/Library/LaunchAgents" "/Library/LaunchDaemons" "/System/Library/LaunchAgents" "/System/Library/LaunchDaemons")
+	tempDirectory="Launch/macOSLaunchAgents"
+
+	for path in "${LaunchPaths[@]}" ; do
+		mkdir -p "${tempDirectory}/${path}"
+	
+		find "$path" -type f ! -name "com.apple.*" -exec cp -R {} "${tempDirectory}/${path}" \; 
+	done
+
+
 }
 
 
