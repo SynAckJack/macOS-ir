@@ -57,7 +57,7 @@ function cLaunch {
 	echo -e "\nGathering launch information"
 	echo "-------------------------------------------------------------------------------"
 
-	if ! mkdir "Launch" ; then
+	if ! mkdir -p "Launch" ; then
 		echo "${FAIL}[-]${NC} Couldn't make Launch directory. Exiting..."
 		exit 1
 	fi
@@ -94,6 +94,19 @@ function cLaunch {
 		mkdir -p "${tempDirectory}/${path}"
 	
 		find "$path" -type f ! -name "com.apple.*" -exec cp -R {} "${tempDirectory}/${path}" \; 
+	done
+
+	echo -e "\nGathering User Launch Agents and Daemons"
+	echo "-------------------------------------------------------------------------------"
+
+	tempDirectory="Launch/userLaunchAgents"
+	for user in "${USERS[@]}" ; do 
+
+		if [ -d "/Users/${user}/Library/LaunchAgents" ] ; then
+			mkdir -p "${tempDirectory}/${user}"
+			find "/Users/${user}/Library/LaunchAgents" -type f ! -name "com.apple.*" -exec cp -R {} "${tempDirectory}/${user}" \; 
+		fi
+
 	done
 
 
@@ -557,7 +570,7 @@ function main {
 
 	while getopts ":hdnu" opt; do
 		case ${opt} in
-			h ) usage
+			h ) cLaunch
 				;;
 			d ) disk 
 				;;
