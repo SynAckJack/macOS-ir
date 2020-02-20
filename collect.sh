@@ -50,6 +50,44 @@ function log {
 	fi
 }
 
+function cBrowsers {
+
+	mkdir "Browsers"
+	
+	declare -a BROWSERS=("Safari.app" "Google Chrome.app" "Firefox.app")
+	
+	echo -e "\nGathering browser data"
+	echo "-------------------------------------------------------------------------------"
+
+	# Full Disk Access must be granted for this to work.
+
+	for path in "${BROWSERS[@]}" ; do
+		if find / \( -path /System -o -path /Library -o -path /private \) -prune -o -name "${path}" 2> /dev/null | grep "${path}" -q; then
+			case "${path}" in
+
+				"Safari.app") 
+				mkdir -p "Browsers/Safari"
+				cp ~/Library/Safari/History.db ~/Library/Safari/Downloads.plist Browsers/Safari/
+				;;
+
+				"Google Chrome.app")
+				mkdir -p "Browsers/Chrome" 
+				killall "Google Chrome"
+				cp "$HOME/Library/Application Support/Google/Chrome/Default/History" Browsers/Chrome/
+				;;
+
+				"Firefox.app") 
+				mkdir -p "Browsers/Firefox"
+				find "$HOME/Library/Application Support/Firefox/Profiles/" -name 'places.sqlite' -exec cp -R {} Browsers/Firefox \;
+				;;
+
+			esac
+		fi
+
+	done
+
+}
+
 function cLaunch {
 
 	local tempDirectory
@@ -351,6 +389,8 @@ function disk {
 			mkdir "$directory" && cd "$directory"
 
 			# COLLECT
+
+			collect
 
 			echo "${INFO}[*]${NC} Collected data. Creating disk image..."
 			log "INFO" "Creating disk image"
