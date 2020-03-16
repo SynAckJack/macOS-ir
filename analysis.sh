@@ -55,9 +55,44 @@ function install_tools {
 	brew update
 	brew upgrade
 	brew bundle
-	
-
 }
+
+function check_hash {
+
+	echo -e "\n${INFO}[*]${NC} Checking shasum of files"
+	echo "-------------------------------------------------------------------------------"
+
+	local shafile
+
+	declare -a FAILEDHASHES
+
+	shafile=$(find . -name "*-shasum.txt")
+
+	while IFS=$'\n' read -r hash ; do 
+
+		if echo "${hash}" | grep "FAILED" >> /dev/null; then
+			FAILEDHASHES+=("${hash}")
+		fi
+
+	done < <(shasum -c "${shafile}")
+
+	if [ "${#FAILEDHASHES[@]}" -gt 0 ] ; then
+		echo "The following files failed checksum: "
+
+		for i in "${FAILEDHASHES[@]}" ; do
+			if echo "${i}" | grep -v -E "shasum.txt" ; then
+				echo "${i}"
+			else
+				echo "Checksum file failed. This is due to the checksum file not containing a hash for itself. Don't worry about it..."	
+			fi
+		done
+	else
+		echo "All files passed checksum."
+	fi
+
+	
+}
+
 
 function log {
 	
