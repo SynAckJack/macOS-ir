@@ -204,6 +204,56 @@ function create_main_html {
 EOF
 }
 
+function create_secondary_html {
+
+	local title="$1"
+
+	cat << EOF > "${reportDirectory}/${title}.html"
+
+	<!DOCTYPE html>
+
+<html>
+
+	<head>
+	    <title>${title}</title>
+	</head>
+
+	<style>
+		html *
+			{
+			font-size: 1em !important;
+			color: #000 !important;
+			font-family: Arial;
+		}
+
+		h1 { 
+			font-size: 2em !important;
+			font-weight: bold !important;
+		}
+
+		@media print {
+    		.pagebreak { 
+    			page-break-before: always; 
+    		} /* page-break-after works, as well */
+		}
+
+		pagetitle {
+			font-size: 36px;
+			align: left;
+		}
+
+	</style>
+
+	<body>
+
+	<h1 class="pagetitle" style="padding-top: 100px">${hostname} - ${title} Analysis Report</h1>
+	<h2>$(date)</h2>
+
+	<div class="pagebreak"></div>
+EOF
+
+}
+
 function log {
 	
 	local type
