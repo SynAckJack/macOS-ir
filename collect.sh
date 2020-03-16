@@ -372,8 +372,9 @@ function cNetworkInfo {
 
 	echo -e "\nGathering network info"
 	echo "-------------------------------------------------------------------------------"
-	echo -e "\n-- ifconfig: \n$(ifconfig)" >> network/ifconfig.txt
-	echo -e "\n-- arp -a: \n$(arp -a)" >> network/arp.txt
+	echo -e "\n$(ifconfig)" >> Network/ifconfig.txt
+	echo -e "\n$(arp -a)" >> Network/arp.txt
+	lsof -i | tr -s ' ' >> Network/lsof.txt
 }
 
 function cDiskInfo {
