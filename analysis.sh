@@ -1214,6 +1214,14 @@ function generate_reports {
 	echo "Reports generated. These can be found at /tmp/Reports/"
 }
 
+function control_c {
+
+	echo -e "\n${FAIL}[X]${NC} Ctrl-C hit. Cleaning up..."
+	echo "-------------------------------------------------------------------------------"
+	cleanup
+	exit 1
+}
+
 function log {
 	
 	local type
