@@ -93,6 +93,24 @@ function check_hash {
 	
 }
 
+function read_file {
+
+	filename="$1"
+
+	if [ -e "${filename}" ] ; then
+
+		while IFS=$'\n' read -r line; do
+
+		if ! [ "${line}" == '' ] ; then
+			LINES+=("$(echo "${line}" | cut -d':' -f 2-)")
+		fi
+		
+
+		done < <(cat "${filename}")
+	
+	fi
+
+}
 
 function log {
 	
@@ -217,12 +235,6 @@ function usb {
 		echo "${FAIL}[-]${NC} Incorrect passphrase. Exiting..."
 		exit 1
 	fi
-}
-
-function requirements {
-	#Install requirements for analysis. This will install XCode Tools alongside others.
-
-	true
 }
 
 function checkSudo {
