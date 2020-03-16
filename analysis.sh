@@ -254,6 +254,52 @@ EOF
 
 }
 
+function analyse_sysinfo {
+	
+	echo -e "\n${INFO}[*]${NC} Analysing sysinfo"
+	echo "-------------------------------------------------------------------------------"
+
+	read_file "systeminfo.txt"
+
+	dDate="${LINES[0]}"
+	dHostName="${LINES[1]}"
+	dMacOSVersion="${LINES[2]}"
+	dKernelVersion="${LINES[3]}"
+	dUptime="${LINES[4]}"
+
+
+cat << EOF >> "${reportDirectory}"/test.html
+	<h1 id="systeminformation">System Information</h1>
+	<br>
+		<table>
+		  <tr>
+		    <td>Host name: </td>
+		    <td>${dHostName}</td> 
+		  </tr>
+		  <tr>
+		    <td>Date: </td>
+		    <td>${dDate}</td> 
+		  </tr>
+		  <tr>
+		    <td>macOS Version: </td>
+		    <td>${dMacOSVersion}</td> 
+		  </tr>
+		  <tr>
+		    <td>Kernel Version: </td>
+		    <td>${dKernelVersion}</td> 
+		  </tr>
+		  <tr>
+		    <td>Uptime: </td>
+		    <td>${dUptime}</td> 
+		  </tr>
+		</table>
+
+		<br><br><br>
+
+EOF
+
+}
+
 function log {
 	
 	local type
