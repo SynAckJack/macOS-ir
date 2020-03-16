@@ -549,6 +549,231 @@ EOF
 
 }
 
+function analyse_browser {
+
+	echo -e "\n${INFO}[*]${NC} Analysing Browsers"
+	echo "-------------------------------------------------------------------------------"
+
+	cat << EOF >> "${reportDirectory}"/test.html
+
+
+	<h1 id="browsers">Browsers</h1>
+	<br>
+	<p><i>Browser history can be found in "Browser History.pdf"</i></p>
+	<br>
+
+EOF
+
+	create_secondary_html "Browser History"
+	cat << EOF >> "${reportDirectory}/Browser History.html"
+
+
+	<h1> Browser History </h1>
+	<br>
+
+EOF
+
+	if [ -d Browsers/Safari/ ] ; then
+
+		if plutil -convert xml1 Browsers/Safari/Downloads.plist -o /tmp/Downloads.xml  ; then
+			TMPFILES+=("/tmp/Downloads.xml")
+
+			echo "<h1 id='browsers/safari'>Safari - Downloads</h1>"  >> "${reportDirectory}"/test.html		
+			echo "<table>"   >> "${reportDirectory}"/test.html
+
+			while IFS=$'\n' read -r line ; do
+
+				tempLine=$(echo "${line}" | awk -F '<date>|</date>' ' { print $2 } ')
+				if [ -n "${tempLine}" ] ; then
+					echo "<tr><td>Download Date</td></tr>"  >> "${reportDirectory}"/test.html
+					echo "<tr><td>${tempLine}</td></tr>" >> "${reportDirectory}"/test.html
+				fi
+				# echo "<tr>" >> "${reportDirectory}"/test.html|
+
+				tempLine=$(echo "${line}" | awk -F '<string>|</string>' ' { print $2 } ')
+				if [ -n "${tempLine}" ] ; then
+					echo "<tr><td>Download URL</td></tr>"  >> "${reportDirectory}"/test.html
+					echo "<tr><td>${tempLine}</td></tr>" >> "${reportDirectory}"/test.html
+				fi
+
+			done < <((grep -A1 -E 'DownloadEntryURL|DownloadEntryDateAddedKey') < /tmp/Downloads.xml)
+
+			echo "</table>" >> "${reportDirectory}"/test.html
+		else
+			echo "Can't analyse Safari Downloads"
+		fi
+
+		if cp -R Browsers/Safari/History.db /tmp/ ; then
+			TMPFILES+=("/tmp/History.db")
+
+			{
+				echo "<h1>Safari - History</h1>"
+				echo "<table>"  
+				echo "<th align=left>ID</th><th align=left>Date</th><th align=left>URL</th>"
+			}  >> "${reportDirectory}/Browser History.html"
+
+			
+			tempdb=$(sqlite3 /tmp/History.db "SELECT DISTINCT l.ID, l.url, r.visit_time FROM history_items l INNER JOIN history_visits r ON r.history_item = l.ID ORDER BY l.ID;" | sed 's/\|/ /g')
+
+			db=$(echo -e "${tempdb}\n")
+
+			prevID=0
+			
+			if ! IFS=$' ' read -rd '' -a y <<< "$db" ; then
+				while IFS=$'\n' read -r line ; do
+
+					id=$(echo "${line}" | awk -F " " ' { print $1 } ')
+
+					if ! [[ "$prevID" -eq "$id" ]] ; then					
+						time=$(echo "${line}" | awk -F " " ' { print $3 } ' | cut -f1 -d".")
+						time=$((time+978307200))
+						date=$(date -r "${time}" '+%d/%m/%Y:%H:%M:%S')
+						url=$(echo "${line}" | awk -F " " ' { print $2 } ')
+
+						echo "<tr><td>${id}</td><td>${date}</td><td>${url}</td></tr>" >> "${reportDirectory}/Browser History.html"
+					fi
+
+					prevID="${id}"
+
+				done < <(echo "${y[@]}")
+			fi
+
+			echo "</table><br>"   >> "${reportDirectory}/Browser History.html"
+	
+		else
+			echo "Can't analyse Safari history."
+		fi
+
+	else
+		echo "Can't analyse Safari."
+	fi
+
+	if [ -d Browsers/Chrome/ ] ; then
+
+		if cp -R Browsers/Chrome/History /tmp/ ; then
+
+			TMPFILES+=("/tmp/History" "/tmp/History.db-shm" "/tmp/History.db-wal")
+
+			echo "<h1 id='browsers/chrome'>Chrome - Downloads</h1>"  >> "${reportDirectory}"/test.html		
+			echo "<table>"   >> "${reportDirectory}"/test.html
+
+			while IFS=$'\n' read -r line ; do
+
+				tempLine=$(echo "${line}" | awk -F ' ' ' { print $1" "$2" "$3" "$4" "$5} ')
+				if [ -n "${tempLine}" ] ; then
+					echo "<tr><td>Download Date</td></tr>"  >> "${reportDirectory}"/test.html
+					echo "<tr><td>${tempLine}</td></tr>" >> "${reportDirectory}"/test.html
+				fi
+				# echo "<tr>" >> "${reportDirectory}"/test.html|
+
+				tempLine=$(echo "${line}" | awk -F ' ' ' { print $7 } ')
+				if [ -n "${tempLine}" ] ; then
+					echo "<tr><td>Download URL</td></tr>"  >> "${reportDirectory}"/test.html
+					echo "<tr><td>${tempLine}</td></tr>" >> "${reportDirectory}"/test.html
+				fi
+
+			done < <((sqlite3 /tmp/History "SELECT last_modified, referrer  FROM downloads;" | sed 's/\|/ /g'))
+
+			echo "</table>" >> "${reportDirectory}"/test.html
+
+			{
+				echo "<h1>Chrome - History</h1>"
+				echo "<table>"  
+				echo "<th align=left>ID</th><th align=left>Date</th><th align=left>URL</th>"
+			}  >> "${reportDirectory}/Browser History.html"
+
+			tempdb=$(sqlite3 /tmp/History "SELECT id, url, last_visit_time FROM urls;")
+
+			db=$(echo -e "${tempdb}\n")
+
+			prevID=0
+			
+			if ! IFS=$' ' read -rd '' -a y <<< "$db" ; then
+				while IFS=$'\n' read -r line ; do
+
+					id=$(echo "${line}" | awk -F "|" ' { print $1 } ')
+
+					if ! [[ "${prevID}" -eq "${id}" ]] || [[ "${id}" == "\n" ]] ; then					
+						time=$(echo "${line}" | awk -F "|" ' { print $3 } ' | cut -f1 -d".")
+						time=$(((time/1000000)-11644473600))
+						date=$(date -r "${time}" '+%d/%m/%Y:%H:%M:%S')
+						url=$(echo "${line}" | awk -F "|" ' { print $2 } ')
+
+						echo "<tr><td>${id}</td><td>${date}</td><td>${url}</td></tr>" >> "${reportDirectory}/Browser History.html"
+					fi
+
+					prevID="${id}"
+
+				done < <(echo "${y[@]}")
+			fi	
+			echo "</table><br>"   >> "${reportDirectory}/Browser History.html"
+		else
+
+		echo "Can't analyse Chrome"		
+		fi
+	fi
+
+	if [ -d Browsers/Firefox/ ] ; then
+
+		if cp -R Browsers/Firefox/places.sqlite /tmp/ ; then
+
+			TMPFILES+=("/tmp/places.sqlite" "/tmp/places.sqlite-shm" "/tmp/places.sqlite-wal")
+
+			echo "<h1 id='browsers/firefox'>Firefox - Downloads</h1>"  >> "${reportDirectory}"/test.html		
+			echo "<table>"   >> "${reportDirectory}"/test.html
+
+			while IFS=$'\n' read -r line ; do
+
+				tempLine=$(echo "${line}" | awk -F '|' ' { print $1} ')
+				time=$((time/1000000))
+				date=$(date -r "${time}" '+%d/%m/%Y:%H:%M:%S')
+				if [ -n "${tempLine}" ] ; then
+					echo "<tr><td>Download Date</td></tr>"  >> "${reportDirectory}"/test.html
+					echo "<tr><td>${date}</td></tr>" >> "${reportDirectory}"/test.html
+				fi
+				# echo "<tr>" >> "${reportDirectory}"/test.html|
+
+				tempLine=$(echo "${line}" | awk -F '|' ' { print $2 } ')
+				if [ -n "${tempLine}" ] ; then
+					echo "<tr><td>Download URL</td></tr>"  >> "${reportDirectory}"/test.html
+					echo "<tr><td>${tempLine}</td></tr>" >> "${reportDirectory}"/test.html
+				fi
+
+			done < <((sqlite3 /tmp/places.sqlite "SELECT moz_annos.dateAdded,  moz_places.url FROM moz_places, moz_annos WHERE moz_places.id = moz_annos.place_id AND anno_attribute_id = 1;"))
+
+			{
+				echo "</table>"
+				echo "<h1>Firefox - History</h1>"
+				echo "<table>"  
+				echo "<th align=left>ID</th><th align=left>Date</th><th align=left>URL</th>"
+			}  >> "${reportDirectory}/Browser History.html"
+
+			tempdb=$(sqlite3 /tmp/places.sqlite "SELECT r.id, l.visit_date, r.url FROM moz_historyvisits l INNER JOIN moz_places r ON l.place_id = r.id;")
+
+			db=$(echo -e "${tempdb}\n")
+			
+			if ! IFS=$' ' read -rd '' -a y <<< "$db" ; then
+				while IFS=$'\n' read -r line ; do
+
+						id=$(echo "${line}" | awk -F "|" ' { print $1 } ')
+						time=$(echo "${line}" | awk -F "|" ' { print $2 } ')
+						time=$((time/1000000))
+						date=$(date -r "${time}" '+%d/%m/%Y:%H:%M:%S')
+						url=$(echo "${line}" | awk -F "|" ' { print $3 } ')
+
+						echo "<tr><td>${id}</td><td>${date}</td><td>${url}</td></tr>" >> "${reportDirectory}/Browser History.html"
+
+				done < <(echo "${y[@]}")
+			fi	
+
+			echo "</table><br><br><br>"   >> "${reportDirectory}"/test.html		
+		else
+			echo "Can't analyse Firefox."
+		fi
+	fi
+
+}
+
 function log {
 	
 	local type
