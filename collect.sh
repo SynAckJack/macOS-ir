@@ -108,6 +108,7 @@ function cLaunch {
 		if  [[ -f /usr/lib/cron/tabs/"${user}" ]] ; then
 			mkdir -p "${tempDirectory}/${user}"
 
+			#shellcheck disable=SC2024
 			if sudo cat /usr/lib/cron/tabs/"${user}" >> "${tempDirectory}/${user}"/cron.txt ; then
 				log "INFO" "cron: ${user} copied."
 			else
@@ -131,19 +132,20 @@ function cLaunch {
 		find "$path" -type f ! -name "com.apple.*" -exec cp -R {} "${tempDirectory}/${path}" \; 
 	done
 
+	set +e
+
 	echo -e "\nGathering User Launch Agents and Daemons"
 	echo "-------------------------------------------------------------------------------"
 
 	tempDirectory="Launch/userLaunchAgents"
 	for user in "${USERS[@]}" ; do 
 
-		if [ -d "/Users/${user}/Library/LaunchAgents" ] ; then
-			mkdir -p "${tempDirectory}/${user}"
-			find "/Users/${user}/Library/LaunchAgents" -type f ! -name "com.apple.*" -exec cp -R {} "${tempDirectory}/${user}" \; 
-		fi
+		mkdir -p "${tempDirectory}/${user}"
+		cp "${user}"/Library/LaunchAgents "${tempDirectory}/${user}"/ 2&> /dev/null
 
 	done
 
+	set -e
 
 }
 
