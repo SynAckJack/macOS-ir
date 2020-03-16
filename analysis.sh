@@ -480,6 +480,75 @@ cat << EOF >> "${reportDirectory}/Hash of Executables.html"
 EOF
 }
 
+function print_signing {
+
+	echo -e "\n${INFO}[*]${NC} Printing Non-Signed Applications"
+	echo "-------------------------------------------------------------------------------"
+
+	cat << EOF >> "${reportDirectory}"/test.html
+
+
+	<h1 id="signing">Non-Signed Applications</h1>
+	<br>
+
+EOF
+
+	if [ -f ~/Github/macos-ir/Applications/notsigned.txt ] ; then
+
+		echo "<i>Note: The following applications are classed as 'Not Signed'. This can be due to them not being signed or failing the requirements for signing.</i><br><br>" >> "${reportDirectory}"/test.html 
+		while IFS=$'\n' read -r line ; do
+
+			echo "${line}<br>" >> "${reportDirectory}"/test.html 
+
+		done < <(cat ~/Github/macos-ir/Applications/notsigned.txt)
+
+	else
+		echo "All Applications are signed!<br>" >> "${reportDirectory}"/test.html 
+	fi
+
+	echo "<br><br><i>A list of all Applications and their signing status can be found in 'Application Signing Status.pdf'.</i><br>" >> "${reportDirectory}"/test.html
+
+	if [ -f ~/Github/macos-ir/Applications/notsigned.txt ] && [ -f ~/Github/macos-ir/Applications/signed.txt ] && [ -f ~/Github/macos-ir/Applications/notarized.txt ] ; then
+	
+		create_secondary_html "Application Signing Status"
+
+		{
+			echo "<h1>Notarized Applications</h1><br>"
+			echo "<i>Note: Notarized Applications are checked for malware by Apple. These can (typically) be inherently trusted due to this.</i><br>"
+		}  >> "${reportDirectory}/Application Signing Status.html"
+
+		while IFS=$'\n' read -r line ; do
+
+			echo "${line}<br>" >> "${reportDirectory}/Application Signing Status.html"
+
+		done < <(cat ~/Github/macos-ir/Applications/notarized.txt)
+
+		{
+			echo "<br><br><br>"
+			echo "<h1>Signed Applications</h1><br>"
+			echo "<i>Note: Although Applications have been signed, they can still be malicious. A certificate can be revoked if Apple deem the Application as malicious, however it can still be distributed and installed.</i><br>"
+		} >> "${reportDirectory}/Application Signing Status.html"
+
+		while IFS=$'\n' read -r line ; do
+
+			echo "${line}<br>" >> "${reportDirectory}/Application Signing Status.html"
+
+		done < <(cat ~/Github/macos-ir/Applications/signed.txt)
+
+		{
+			echo "<br><br><br>"
+			echo "<h1>Non-Signed Applications</h1><br>"
+		}  >> "${reportDirectory}/Application Signing Status.html"
+
+		while IFS=$'\n' read -r line ; do
+
+			echo "${line}<br>" >> "${reportDirectory}/Application Signing Status.html"
+
+		done < <(cat ~/Github/macos-ir/Applications/notsigned.txt)
+	fi
+
+}
+
 function log {
 	
 	local type
