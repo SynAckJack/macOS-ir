@@ -204,6 +204,9 @@ function cUser {
 
 		find "${homeDir}" -name ".*" -exec cp {} User/"${users}" \; 2> /dev/null
 
+		if [[ -f "${homeDir}".zsh_history ]] ; then
+			history -En > User/"${users}"/zsh_history
+		fi
 
 	done < <(dscl . list /Users | grep -v '_')
 

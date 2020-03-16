@@ -1245,7 +1245,6 @@ function write_sudo_commands {
 	unset "SUDOCOMMANDS[@]"
 
 }
-}
 
 function parse_sysdiagnose {
 	
