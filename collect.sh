@@ -386,8 +386,8 @@ function cDiskInfo {
 
 	echo -e "\nGathering disk info"
 	echo "-------------------------------------------------------------------------------"
-	echo -e "\n-- diskutil list: \n$(diskutil list)" >> disk/diskutil.txt
-	echo -e "\n-- df -h: \n$(df -h)" >> disk/df.txt
+	echo -e "\n$(diskutil list)" >> disk/diskutil.txt
+	echo -e "\n$(df -h)" >> disk/df.txtc
 }
 
 function collect {
