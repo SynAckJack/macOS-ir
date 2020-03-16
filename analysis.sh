@@ -442,6 +442,44 @@ echo "</table><br><br><br>"  >> "${reportDirectory}"/test.html
 
 }
 
+function print_hash {
+
+	echo -e "\n${INFO}[*]${NC} Printing Executable Hashes"
+	echo "-------------------------------------------------------------------------------"
+
+	create_secondary_html "Hash of Executables"
+
+	cat << EOF >> "${reportDirectory}/Hash of Executables.html"
+
+
+	<h1 id="hashes">Hashes of Executables</h1>
+	<br>
+		<table>
+		<th align=left>Hashes (SHA-256)</th><th align=left>Executable Path</th>
+EOF
+	
+	while IFS=$'\n' read -r line ; do
+
+		tempLine=$(echo "${line}" | awk -F '  ' ' { print $1 } ')
+		echo "<tr>" >> "${reportDirectory}/Hash of Executables.html"
+		echo "<td>${tempLine}</td>" >> "${reportDirectory}/Hash of Executables.html"
+		# echo "<tr>" >> "${reportDirectory}"/test.html
+
+		tempLine=$(echo "${line}" | awk -F '  ' ' { print $2 } ')
+		echo "<td>${tempLine}</td>" >> "${reportDirectory}/Hash of Executables.html"
+		echo "<tr>" >> "${reportDirectory}/Hash of Executables.html"
+
+	done < Applications/hash.txt
+
+
+
+cat << EOF >> "${reportDirectory}/Hash of Executables.html"
+
+		</table>
+		<br><br><br>
+EOF
+}
+
 function log {
 	
 	local type
