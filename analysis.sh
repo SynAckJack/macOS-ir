@@ -798,6 +798,71 @@ EOF
 
 }
 
+function print_files {
+
+	echo -e "\n${INFO}[*]${NC} Printing File Information"
+	echo "-------------------------------------------------------------------------------"
+
+	cat << EOF > "${reportDirectory}"/files.html
+
+	<!DOCTYPE html>
+
+	<html>
+
+	<head>
+	    <title>File Information</title>
+	</head>
+
+	<style>
+
+		@media print{@page {size: landscape}}
+
+		html * {
+			font-size: 1em !important;
+			color: #000 !important;
+			font-family: Arial !important;
+		}
+
+		h1 { 
+			font-size: 2em !important;
+			font-weight: bold !important;
+		}
+
+	</style>
+
+	<body>
+
+	<h1>File Information</h1>
+	<br>
+	<table>
+	<th>Permissions</th><th>Last Modified</th><th>Created</th><th>Hash</th><th>Path</th>
+
+EOF
+
+
+	while IFS=$'\n' read -r file ; do
+		
+		while IFS="$" read -r line ; do
+
+			{
+				echo "${line} " | awk -F '|' ' { print "<tr><td>" $1 "</td><td>" $2 "</td><td>" $3 "</td>" } '
+				temp=$(echo "${line} " | awk -F '|' ' { print $4 } ')
+				echo "${temp}" | awk -F ' /' ' { print "<td>" $1 "</td>"} '
+				echo "${temp}" | awk -F ' /' ' { print "<td>" $2 "</td></tr>"} '
+			}  >> "${reportDirectory}"/files.html
+
+		done < <(cat -e "$file")
+
+	done < <(find Files -type f -name "*.txt")
+
+cat << EOF >> "${reportDirectory}"/files.html
+
+			</table>
+		</body>
+	</html>
+EOF
+}
+
 function log {
 	
 	local type
