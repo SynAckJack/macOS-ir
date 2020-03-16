@@ -300,6 +300,62 @@ EOF
 
 }
 
+function analyse_security {
+
+	unset "LINES[@]"
+
+	echo -e "\n${INFO}[*]${NC} Analysing security"
+	echo "-------------------------------------------------------------------------------"
+
+	read_file "security.txt"
+
+	dSIP="${LINES[0]}"
+	dEFI="${LINES[1]}"
+	dMRT="${LINES[2]}"
+	dFirewall="${LINES[3]}"
+	dStealthFirewall="${LINES[4]}"
+	dXProtect="${LINES[5]}"
+	dUpdateStatus="${LINES[7]}"
+
+	cat << EOF >> "${reportDirectory}"/test.html
+
+	<h1 id="securityinformation">Security Information</h1>
+	<br>
+		<table>
+		  <tr>
+		    <td>System Integrity Protection: </td>
+		    <td>${dSIP}</td> 
+		  </tr>
+		  <tr>
+		    <td>EFI Integrity: </td>
+		    <td>${dEFI}</td> 
+		  </tr>
+		  <tr>
+		    <td>Malware Removal Tool Version: </td>
+		    <td>${dMRT}</td> 
+		  </tr>
+		  <tr>
+		    <td>Firewall: </td>
+		    <td>${dFirewall}</td> 
+		  </tr>
+		  <tr>
+		    <td>Stealth Firewall: </td>
+		    <td>${dStealthFirewall}</td> 
+		  </tr>
+		  <tr>
+		    <td>XProtect Version: </td>
+		    <td>${dXProtect}</td> 
+		  </tr>
+		  <tr>
+		    <td>Update Status: </td>
+		    <td>${dUpdateStatus}</td> 
+		  </tr>
+		</table>
+	<br><br><br>
+EOF
+
+}
+
 function log {
 	
 	local type
