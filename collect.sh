@@ -53,38 +53,34 @@ function log {
 function cBrowsers {
 
 	mkdir "Browsers"
-	
-	declare -a BROWSERS=("Safari.app" "Google Chrome.app" "Firefox.app")
-	
+
 	echo -e "\nGathering browser data"
 	echo "-------------------------------------------------------------------------------"
 
 	# Full Disk Access must be granted for this to work.
 
-	for path in "${BROWSERS[@]}" ; do
-		if find / \( -path /System -o -path /Library -o -path /private \) -prune -o -name "${path}" 2> /dev/null | grep "${path}" -q; then
-			case "${path}" in
+	if [ -d "/Applications/Safari.app" ] ; then
 
-				"Safari.app") 
-				mkdir -p "Browsers/Safari"
-				cp ~/Library/Safari/History.db ~/Library/Safari/Downloads.plist Browsers/Safari/
-				;;
+		mkdir -p "Browsers/Safari"
+		cp ~/Library/Safari/History.db ~/Library/Safari/Downloads.plist Browsers/Safari/
 
-				"Google Chrome.app")
-				mkdir -p "Browsers/Chrome" 
-				killall "Google Chrome"
-				cp "$HOME/Library/Application Support/Google/Chrome/Default/History" Browsers/Chrome/
-				;;
+	fi
 
-				"Firefox.app") 
-				mkdir -p "Browsers/Firefox"
-				find "$HOME/Library/Application Support/Firefox/Profiles/" -name 'places.sqlite' -exec cp -R {} Browsers/Firefox \;
-				;;
+	if [ -d "/Applications/Google Chrome.app" ] ; then
 
-			esac
+		if pgrep "Google Chrome" ; then
+			killall "Google Chrome"
 		fi
+		
+		mkdir -p "Browsers/Chrome"
+		cp "$HOME/Library/Application Support/Google/Chrome/Default/History" Browsers/Chrome/
+	fi
 
-	done
+	if [ -d "/Applications/Firefox.app" ] ; then
+
+		mkdir -p "Browsers/Firefox"
+		find "$HOME/Library/Application Support/Firefox/Profiles/" -name 'places.sqlite' -exec cp -R {} Browsers/Firefox \;
+	fi
 
 }
 
