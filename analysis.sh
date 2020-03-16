@@ -923,6 +923,120 @@ EOF
 	echo "<br><br><br>"   >> "${reportDirectory}"/test.html		
 }
 
+function print_networking {
+
+	echo -e "\n${INFO}[*]${NC} Printing Network Information"
+	echo "-------------------------------------------------------------------------------"
+
+	cat << EOF >> "${reportDirectory}"/test.html
+
+
+	<h1 id="network">Network Information</h1>
+	<br>
+
+EOF
+
+	if [ -f Network/arp.txt ] ; then
+
+		echo "<b id='network/arp'>ARP Table</b><br>" >> "${reportDirectory}"/test.html
+
+		while IFS=$'\n' read -r line ; do 
+
+			{	
+				echo "<pre>"
+				echo "${line}"
+			} >> "${reportDirectory}"/test.html
+
+		done < <(cat Network/arp.txt)
+
+		echo "</pre><br>" >> "${reportDirectory}"/test.html
+	fi
+
+	if [ -f Network/ifconfig.txt ] ; then
+
+		echo "<b  id='network/ifconfig'>IFCONFIG Output</b><br>" >> "${reportDirectory}"/test.html
+
+		while IFS=$'\n' read -r line ; do 
+
+			{
+				echo "<pre>"
+				echo "${line}" | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4
+			} >> "${reportDirectory}"/test.html
+
+		done < <(cat Network/ifconfig.txt)
+
+		echo "</pre><br>" >> "${reportDirectory}"/test.html
+	fi
+
+	if [ -f Network/lsof.txt ] ; then
+
+		echo "<b  id='network/connections'>Network Connections</b><br>" >> "${reportDirectory}"/test.html 
+
+		if sqlite3 /tmp/tmp.db "CREATE TABLE process(id INTEGER PRIMARY KEY AUTOINCREMENT, user TEXT, pid INTEGER, command TEXT);" ; then
+
+			TMPFILES+=("/tmp/tmp.db")
+
+			if sqlite3 /tmp/tmp.db "CREATE TABLE lsof(id INTEGER PRIMARY KEY AUTOINCREMENT, command TEXT,  pid INTEGER, user TEXT, node TEXT, name TEXT);" ; then
+
+				while IFS=$'\n' read -r line; do
+	
+					user=$(echo "${line}" | cut -d ' ' -f 1)
+					pid=$(echo "${line}" | cut -d ' ' -f 2)
+					cmd=$(echo "${line}" | cut -d ' ' -f 3-)
+
+					# echo "${user}, ${pid}, ${cmd}"
+
+					sqlite3 /tmp/tmp.db  "INSERT INTO process (user, pid, command) VALUES (\"${user}\", \"${pid}\", \"${cmd}\");"
+						
+				done < <(cat Applications/processes.txt)
+
+				while IFS=$'\n' read -r line; do
+						
+					user=$(echo "${line}" | cut -d ' ' -f 3)
+					pid=$(echo "${line}" | cut -d ' ' -f 2)
+					cmd=$(echo "${line}" | cut -d ' ' -f 1)
+					node=$(echo "${line}" | cut -d ' ' -f 8)
+					name=$(echo "${line}" | cut -d ' ' -f 9)
+
+					sqlite3 /tmp/tmp.db  "INSERT INTO lsof (command, pid, user, node, name) VALUES (\"${cmd}\", \"${pid}\", \"${user}\", \"${node}\", \"${name}\");"
+
+				done < <(tr -s ' ' < Network/lsof.txt  )
+
+				db=$(sqlite3 /tmp/tmp.db "SELECT l.user, l.pid, r.node, r.name, l.command FROM process l INNER JOIN lsof r ON l.pid = r.pid;")
+
+				if ! IFS=$' ' read -rd '' -a y <<< "$db" ; then
+
+					{	
+						echo "Command paths have been shortened for system paths: "
+						echo "S/L/F/WK.f/ -> System/Library/Frameworks/WebKit.framework/"
+						echo "S/L/PF/WK.f/ -> System/Library/PrivateFrameworks/WebKit.framework/"
+						echo "<table>"
+						echo "<tr><th align=left>User</th><th align=left>PID</th><th align=left>Type</th><th align=left>Connection</th><th align=left>Command</th></tr>"
+					}  >> "${reportDirectory}"/test.html
+
+					while IFS=$'\n' read -r line ; do
+
+						user=$(echo "${line}" | awk -F "|" ' { print $1 } ')
+						pid=$(echo "${line}" | awk -F "|" ' { print $2 } ')
+						node=$(echo "${line}" | awk -F "|" ' { print $3 } ')
+						name=$(echo "${line}" | awk -F "|" ' { print $4 } ' | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g')
+						command=$(echo "${line}" | awk -F "|" ' { print $5 } ' | sed 's;/System/Library/Frameworks/WebKit.framework;S/L/F/WK.f;g' | sed 's;/System/Library/PrivateFrameworks/WebKit.framework;S/L/PF/WK.f;g' | sed 's;/System/Library/PrivateFrameworks;S/L/PF;g')
+
+						echo "<tr><td>${user}</td><td>${pid}</td><td>${node}</td><td>${name}</td><td>${command}</td></tr>" >> "${reportDirectory}"/test.html
+
+					done < <(echo "${y[@]}")
+
+					echo "</table>"  >> "${reportDirectory}"/test.html
+				fi
+
+			
+			fi
+		fi
+	fi
+
+	echo "<br><br><br>"   >> "${reportDirectory}"/test.html
+}
+
 function log {
 	
 	local type
