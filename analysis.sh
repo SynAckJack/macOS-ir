@@ -892,6 +892,36 @@ EOF
 	echo "<br><br><br>" >> "${reportDirectory}"/test.html	
 }
 
+function analyse_launch_agents {
+
+	echo -e "\n${INFO}[*]${NC} Printing Launch Agents"
+	echo "-------------------------------------------------------------------------------"
+
+	cat << EOF >> "${reportDirectory}"/test.html
+
+
+	<h1 id="launchagents">Launch Agents</h1>
+	<br>
+
+EOF
+	mkdir -p /tmp/launch/
+
+	TMPFILES+=("/tmp/launch")
+
+	while IFS=$'\n' read -r path ; do 
+
+		{
+			echo "<b>${path}</b><br>"
+			echo "<pre>"
+			(sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4) < "${path}"
+			echo "</pre>"
+			echo "<br>"
+		} >> "${reportDirectory}"/test.html
+
+	done < <(find Launch -name "*.plist" -print)
+
+	echo "<br><br><br>"   >> "${reportDirectory}"/test.html		
+}
 
 function log {
 	
