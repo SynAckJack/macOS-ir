@@ -114,9 +114,7 @@ function read_file {
 
 function create_main_html {
 
-	hostname=$(find . -name "*-shasum.txt" -print | cut -d '-' -f 1 | tr -d './')
-
-		cat << EOF > "${reportDirectory}"/test.html
+		cat << EOF > "${reportDirectory}/${hostname}.html"
 <!DOCTYPE html>
 
 <html>
@@ -268,7 +266,7 @@ function analyse_sysinfo {
 	dUptime="${LINES[4]}"
 
 
-cat << EOF >> "${reportDirectory}"/test.html
+cat << EOF > "${reportDirectory}/${hostname}.html"
 	<h1 id="systeminformation">System Information</h1>
 	<br>
 		<table>
@@ -317,7 +315,7 @@ function analyse_security {
 	dXProtect="${LINES[5]}"
 	dUpdateStatus="${LINES[7]}"
 
-	cat << EOF >> "${reportDirectory}"/test.html
+cat << EOF > "${reportDirectory}/${hostname}.html"
 
 	<h1 id="securityinformation">Security Information</h1>
 	<br>
@@ -362,7 +360,7 @@ function analyse_applications {
 	echo "-------------------------------------------------------------------------------"
 
 
-cat << EOF >> "${reportDirectory}"/test.html
+cat << EOF > "${reportDirectory}/${hostname}.html"
 
 
 	<h1 id="applicationinformation">Application Information</h1>
@@ -398,21 +396,22 @@ EOF
 					echo "<td>${value}</td>"
 					echo "</tr>"
 					echo "<tr><td>------------------------------</td><td>--------------------------------------------------------------------------------------------------------------------------------------------------------</td></tr>"
-				}	 >> "${reportDirectory}"/test.html
+				}	 >> "${reportDirectory}/${hostname}.html"
 			else 
 				{
 					echo "<tr>"
 					echo "<td>${title}: </td>"
 					echo "<td>${value}</td>"
 					echo "</tr>"
-				}  >> "${reportDirectory}"/test.html
+				}  >> "${reportDirectory}/${hostname}.html"
 			fi
 		fi
 
 
 	done 
 
-	cat << EOF >> "${reportDirectory}"/test.html
+	cat << EOF > "${reportDirectory}/${hostname}.html"
+
 
 		</table>
 		<br><br><br>
@@ -424,7 +423,7 @@ function analyse_install_history {
 	echo -e "\n${INFO}[*]${NC} Analysing install history"
 	echo "-------------------------------------------------------------------------------"
 
-	cat << EOF >> "${reportDirectory}"/test.html
+	cat << EOF > "${reportDirectory}/${hostname}.html"
 
 
 	<h1 id="installhistory">Install History</h1>
@@ -434,11 +433,11 @@ EOF
 	
 	while IFS=$'\n' read -r line ; do
 
-		echo "${line}<br>" >> "${reportDirectory}"/test.html
+		echo "${line}<br>" >> "${reportDirectory}/${hostname}.html"
 
 	done < <((grep -B3 -A1 -E "Source: 3rd Party" | sed 's/--//g') < Applications/InstallHistory.txt)
 
-echo "</table><br><br><br>"  >> "${reportDirectory}"/test.html
+echo "</table><br><br><br>"  >> "${reportDirectory}/${hostname}.html"
 
 }
 
@@ -463,7 +462,7 @@ EOF
 		tempLine=$(echo "${line}" | awk -F '  ' ' { print $1 } ')
 		echo "<tr>" >> "${reportDirectory}/Hash of Executables.html"
 		echo "<td>${tempLine}</td>" >> "${reportDirectory}/Hash of Executables.html"
-		# echo "<tr>" >> "${reportDirectory}"/test.html
+		# echo "<tr>" >> "${reportDirectory}/${hostname}.html" 
 
 		tempLine=$(echo "${line}" | awk -F '  ' ' { print $2 } ')
 		echo "<td>${tempLine}</td>" >> "${reportDirectory}/Hash of Executables.html"
@@ -485,7 +484,7 @@ function print_signing {
 	echo -e "\n${INFO}[*]${NC} Printing Non-Signed Applications"
 	echo "-------------------------------------------------------------------------------"
 
-	cat << EOF >> "${reportDirectory}"/test.html
+	cat << EOF > "${reportDirectory}/${hostname}.html"
 
 
 	<h1 id="signing">Non-Signed Applications</h1>
@@ -495,18 +494,18 @@ EOF
 
 	if [ -f ~/Github/macos-ir/Applications/notsigned.txt ] ; then
 
-		echo "<i>Note: The following applications are classed as 'Not Signed'. This can be due to them not being signed or failing the requirements for signing.</i><br><br>" >> "${reportDirectory}"/test.html 
+		echo "<i>Note: The following applications are classed as 'Not Signed'. This can be due to them not being signed or failing the requirements for signing.</i><br><br>" >> "${reportDirectory}/${hostname}.html" 
 		while IFS=$'\n' read -r line ; do
 
-			echo "${line}<br>" >> "${reportDirectory}"/test.html 
+			echo "${line}<br>" >> "${reportDirectory}/${hostname}.html"  
 
 		done < <(cat ~/Github/macos-ir/Applications/notsigned.txt)
 
 	else
-		echo "All Applications are signed!<br>" >> "${reportDirectory}"/test.html 
+		echo "All Applications are signed!<br>" >> "${reportDirectory}/${hostname}.html" 
 	fi
 
-	echo "<br><br><i>A list of all Applications and their signing status can be found in 'Application Signing Status.pdf'.</i><br>" >> "${reportDirectory}"/test.html
+	echo "<br><br><i>A list of all Applications and their signing status can be found in 'Application Signing Status.pdf'.</i><br>" >> "${reportDirectory}/${hostname}.html" 
 
 	if [ -f ~/Github/macos-ir/Applications/notsigned.txt ] && [ -f ~/Github/macos-ir/Applications/signed.txt ] && [ -f ~/Github/macos-ir/Applications/notarized.txt ] ; then
 	
@@ -554,7 +553,7 @@ function analyse_browser {
 	echo -e "\n${INFO}[*]${NC} Analysing Browsers"
 	echo "-------------------------------------------------------------------------------"
 
-	cat << EOF >> "${reportDirectory}"/test.html
+	cat << EOF >> "${reportDirectory}/${hostname}.html" 
 
 
 	<h1 id="browsers">Browsers</h1>
@@ -578,27 +577,27 @@ EOF
 		if plutil -convert xml1 Browsers/Safari/Downloads.plist -o /tmp/Downloads.xml  ; then
 			TMPFILES+=("/tmp/Downloads.xml")
 
-			echo "<h1 id='browsers/safari'>Safari - Downloads</h1>"  >> "${reportDirectory}"/test.html		
-			echo "<table>"   >> "${reportDirectory}"/test.html
+			echo "<h1 id='browsers/safari'>Safari - Downloads</h1>"  >> "${reportDirectory}/${hostname}.html" 	
+			echo "<table>"   >> "${reportDirectory}/${hostname}.html" 
 
 			while IFS=$'\n' read -r line ; do
 
 				tempLine=$(echo "${line}" | awk -F '<date>|</date>' ' { print $2 } ')
 				if [ -n "${tempLine}" ] ; then
-					echo "<tr><td>Download Date</td></tr>"  >> "${reportDirectory}"/test.html
-					echo "<tr><td>${tempLine}</td></tr>" >> "${reportDirectory}"/test.html
+					echo "<tr><td>Download Date</td></tr>"  >> "${reportDirectory}/${hostname}.html" 
+					echo "<tr><td>${tempLine}</td></tr>" >> "${reportDirectory}/${hostname}.html" 
 				fi
-				# echo "<tr>" >> "${reportDirectory}"/test.html|
+				# echo "<tr>" >> "${reportDirectory}/${hostname}.html" |
 
 				tempLine=$(echo "${line}" | awk -F '<string>|</string>' ' { print $2 } ')
 				if [ -n "${tempLine}" ] ; then
-					echo "<tr><td>Download URL</td></tr>"  >> "${reportDirectory}"/test.html
-					echo "<tr><td>${tempLine}</td></tr>" >> "${reportDirectory}"/test.html
+					echo "<tr><td>Download URL</td></tr>"  >> "${reportDirectory}/${hostname}.html" 
+					echo "<tr><td>${tempLine}</td></tr>" >> "${reportDirectory}/${hostname}.html" 
 				fi
 
 			done < <((grep -A1 -E 'DownloadEntryURL|DownloadEntryDateAddedKey') < /tmp/Downloads.xml)
 
-			echo "</table>" >> "${reportDirectory}"/test.html
+			echo "</table>" >> "${reportDirectory}/${hostname}.html" 
 		else
 			echo "Can't analyse Safari Downloads"
 		fi
@@ -654,27 +653,27 @@ EOF
 
 			TMPFILES+=("/tmp/History" "/tmp/History.db-shm" "/tmp/History.db-wal")
 
-			echo "<h1 id='browsers/chrome'>Chrome - Downloads</h1>"  >> "${reportDirectory}"/test.html		
-			echo "<table>"   >> "${reportDirectory}"/test.html
+			echo "<h1 id='browsers/chrome'>Chrome - Downloads</h1>"  >> "${reportDirectory}/${hostname}.html" 		
+			echo "<table>"   >> "${reportDirectory}/${hostname}.html" 
 
 			while IFS=$'\n' read -r line ; do
 
 				tempLine=$(echo "${line}" | awk -F ' ' ' { print $1" "$2" "$3" "$4" "$5} ')
 				if [ -n "${tempLine}" ] ; then
-					echo "<tr><td>Download Date</td></tr>"  >> "${reportDirectory}"/test.html
-					echo "<tr><td>${tempLine}</td></tr>" >> "${reportDirectory}"/test.html
+					echo "<tr><td>Download Date</td></tr>"  >> "${reportDirectory}/${hostname}.html" 
+					echo "<tr><td>${tempLine}</td></tr>" >> "${reportDirectory}/${hostname}.html" 
 				fi
-				# echo "<tr>" >> "${reportDirectory}"/test.html|
+				# echo "<tr>" >> "${reportDirectory}/${hostname}.html" |
 
 				tempLine=$(echo "${line}" | awk -F ' ' ' { print $7 } ')
 				if [ -n "${tempLine}" ] ; then
-					echo "<tr><td>Download URL</td></tr>"  >> "${reportDirectory}"/test.html
-					echo "<tr><td>${tempLine}</td></tr>" >> "${reportDirectory}"/test.html
+					echo "<tr><td>Download URL</td></tr>"  >> "${reportDirectory}/${hostname}.html" 
+					echo "<tr><td>${tempLine}</td></tr>" >> "${reportDirectory}/${hostname}.html" 
 				fi
 
 			done < <((sqlite3 /tmp/History "SELECT last_modified, referrer  FROM downloads;" | sed 's/\|/ /g'))
 
-			echo "</table>" >> "${reportDirectory}"/test.html
+			echo "</table>" >> "${reportDirectory}/${hostname}.html" 
 
 			{
 				echo "<h1>Chrome - History</h1>"
@@ -719,8 +718,8 @@ EOF
 
 			TMPFILES+=("/tmp/places.sqlite" "/tmp/places.sqlite-shm" "/tmp/places.sqlite-wal")
 
-			echo "<h1 id='browsers/firefox'>Firefox - Downloads</h1>"  >> "${reportDirectory}"/test.html		
-			echo "<table>"   >> "${reportDirectory}"/test.html
+			echo "<h1 id='browsers/firefox'>Firefox - Downloads</h1>"  >> "${reportDirectory}/${hostname}.html" 		
+			echo "<table>"   >> "${reportDirectory}/${hostname}.html" 
 
 			while IFS=$'\n' read -r line ; do
 
@@ -728,15 +727,15 @@ EOF
 				time=$((time/1000000))
 				date=$(date -r "${time}" '+%d/%m/%Y:%H:%M:%S')
 				if [ -n "${tempLine}" ] ; then
-					echo "<tr><td>Download Date</td></tr>"  >> "${reportDirectory}"/test.html
-					echo "<tr><td>${date}</td></tr>" >> "${reportDirectory}"/test.html
+					echo "<tr><td>Download Date</td></tr>"  >> "${reportDirectory}/${hostname}.html" 
+					echo "<tr><td>${date}</td></tr>" >> "${reportDirectory}/${hostname}.html" 
 				fi
-				# echo "<tr>" >> "${reportDirectory}"/test.html|
+				# echo "<tr>" >> "${reportDirectory}/${hostname}.html" |
 
 				tempLine=$(echo "${line}" | awk -F '|' ' { print $2 } ')
 				if [ -n "${tempLine}" ] ; then
-					echo "<tr><td>Download URL</td></tr>"  >> "${reportDirectory}"/test.html
-					echo "<tr><td>${tempLine}</td></tr>" >> "${reportDirectory}"/test.html
+					echo "<tr><td>Download URL</td></tr>"  >> "${reportDirectory}/${hostname}.html" 
+					echo "<tr><td>${tempLine}</td></tr>" >> "${reportDirectory}/${hostname}.html" 
 				fi
 
 			done < <((sqlite3 /tmp/places.sqlite "SELECT moz_annos.dateAdded,  moz_places.url FROM moz_places, moz_annos WHERE moz_places.id = moz_annos.place_id AND anno_attribute_id = 1;"))
@@ -766,7 +765,7 @@ EOF
 				done < <(echo "${y[@]}")
 			fi	
 
-			echo "</table><br><br><br>"   >> "${reportDirectory}"/test.html		
+			echo "</table><br><br><br>"   >> "${reportDirectory}/${hostname}.html" 		
 		else
 			echo "Can't analyse Firefox."
 		fi
@@ -779,22 +778,22 @@ function print_disk {
 	echo -e "\n${INFO}[*]${NC} Printing Disk Information"
 	echo "-------------------------------------------------------------------------------"
 
-	cat << EOF >> "${reportDirectory}"/test.html
+	cat << EOF >> "${reportDirectory}/${hostname}.html" 
 
 	<h1 id="disk">Disk Information</h1>
 EOF
 
 	if [ -e disk/diskutil.txt ] ; then
-		echo "<pre>" >> "${reportDirectory}"/test.html
+		echo "<pre>" >> "${reportDirectory}/${hostname}.html" 
 		while IFS=$'\r' read -r line ; do
-			echo "${line}" | expand -t4 >> "${reportDirectory}"/test.html
+			echo "${line}" | expand -t4 >> "${reportDirectory}/${hostname}.html" 
 		done < <(cat disk/diskutil.txt)
-		echo "</pre>" >> "${reportDirectory}"/test.html
+		echo "</pre>" >> "${reportDirectory}/${hostname}.html" 
 
 		
 	fi
 
-	echo "<br><br><br>"   >> "${reportDirectory}"/test.html		
+	echo "<br><br><br>"   >> "${reportDirectory}/${hostname}.html" 		
 
 }
 
@@ -868,7 +867,7 @@ function analyse_cron {
 	echo -e "\n${INFO}[*]${NC} Printing Cron Jobs"
 	echo "-------------------------------------------------------------------------------"
 
-	cat << EOF >> "${reportDirectory}"/test.html
+	cat << EOF >> "${reportDirectory}/${hostname}.html" 
 
 
 	<h1 id="cron">Cron Jobs</h1>
@@ -883,13 +882,13 @@ EOF
 				echo "<p><b>${job} Cron Jobs: </b></p>"
 				echo "<pre>"
 				sudo cat "${job}/cron.txt"
-			}  >> "${reportDirectory}"/test.html
+			}  >> "${reportDirectory}/${hostname}.html" 
 		fi
-		echo "</pre>" >> "${reportDirectory}"/test.html
-		echo "<br>"  >> "${reportDirectory}"/test.html
+		echo "</pre>" >> "${reportDirectory}/${hostname}.html" 
+		echo "<br>"  >> "${reportDirectory}/${hostname}.html" 
 	done
 
-	echo "<br><br><br>" >> "${reportDirectory}"/test.html	
+	echo "<br><br><br>" >> "${reportDirectory}/${hostname}.html" 	
 }
 
 function analyse_launch_agents {
@@ -897,7 +896,7 @@ function analyse_launch_agents {
 	echo -e "\n${INFO}[*]${NC} Printing Launch Agents"
 	echo "-------------------------------------------------------------------------------"
 
-	cat << EOF >> "${reportDirectory}"/test.html
+	cat << EOF >> "${reportDirectory}/${hostname}.html" 
 
 
 	<h1 id="launchagents">Launch Agents</h1>
@@ -916,11 +915,11 @@ EOF
 			(sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4) < "${path}"
 			echo "</pre>"
 			echo "<br>"
-		} >> "${reportDirectory}"/test.html
+		} >> "${reportDirectory}/${hostname}.html" 
 
 	done < <(find Launch -name "*.plist" -print)
 
-	echo "<br><br><br>"   >> "${reportDirectory}"/test.html		
+	echo "<br><br><br>"   >> "${reportDirectory}/${hostname}.html" 		
 }
 
 function print_networking {
@@ -928,7 +927,7 @@ function print_networking {
 	echo -e "\n${INFO}[*]${NC} Printing Network Information"
 	echo "-------------------------------------------------------------------------------"
 
-	cat << EOF >> "${reportDirectory}"/test.html
+	cat << EOF >> "${reportDirectory}/${hostname}.html" 
 
 
 	<h1 id="network">Network Information</h1>
@@ -938,39 +937,39 @@ EOF
 
 	if [ -f Network/arp.txt ] ; then
 
-		echo "<b id='network/arp'>ARP Table</b><br>" >> "${reportDirectory}"/test.html
+		echo "<b id='network/arp'>ARP Table</b><br>" >> "${reportDirectory}/${hostname}.html" 
 
 		while IFS=$'\n' read -r line ; do 
 
 			{	
 				echo "<pre>"
 				echo "${line}"
-			} >> "${reportDirectory}"/test.html
+			} >> "${reportDirectory}/${hostname}.html" 
 
 		done < <(cat Network/arp.txt)
 
-		echo "</pre><br>" >> "${reportDirectory}"/test.html
+		echo "</pre><br>" >> "${reportDirectory}/${hostname}.html" 
 	fi
 
 	if [ -f Network/ifconfig.txt ] ; then
 
-		echo "<b  id='network/ifconfig'>IFCONFIG Output</b><br>" >> "${reportDirectory}"/test.html
+		echo "<b  id='network/ifconfig'>IFCONFIG Output</b><br>" >> "${reportDirectory}/${hostname}.html" 
 
 		while IFS=$'\n' read -r line ; do 
 
 			{
 				echo "<pre>"
 				echo "${line}" | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4
-			} >> "${reportDirectory}"/test.html
+			} >> "${reportDirectory}/${hostname}.html" 
 
 		done < <(cat Network/ifconfig.txt)
 
-		echo "</pre><br>" >> "${reportDirectory}"/test.html
+		echo "</pre><br>" >> "${reportDirectory}/${hostname}.html" 
 	fi
 
 	if [ -f Network/lsof.txt ] ; then
 
-		echo "<b  id='network/connections'>Network Connections</b><br>" >> "${reportDirectory}"/test.html 
+		echo "<b  id='network/connections'>Network Connections</b><br>" >> "${reportDirectory}/${hostname}.html"  
 
 		if sqlite3 /tmp/tmp.db "CREATE TABLE process(id INTEGER PRIMARY KEY AUTOINCREMENT, user TEXT, pid INTEGER, command TEXT);" ; then
 
@@ -1012,7 +1011,7 @@ EOF
 						echo "S/L/PF/WK.f/ -> System/Library/PrivateFrameworks/WebKit.framework/"
 						echo "<table>"
 						echo "<tr><th align=left>User</th><th align=left>PID</th><th align=left>Type</th><th align=left>Connection</th><th align=left>Command</th></tr>"
-					}  >> "${reportDirectory}"/test.html
+					}  >> "${reportDirectory}/${hostname}.html" 
 
 					while IFS=$'\n' read -r line ; do
 
@@ -1022,11 +1021,11 @@ EOF
 						name=$(echo "${line}" | awk -F "|" ' { print $4 } ' | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g')
 						command=$(echo "${line}" | awk -F "|" ' { print $5 } ' | sed 's;/System/Library/Frameworks/WebKit.framework;S/L/F/WK.f;g' | sed 's;/System/Library/PrivateFrameworks/WebKit.framework;S/L/PF/WK.f;g' | sed 's;/System/Library/PrivateFrameworks;S/L/PF;g')
 
-						echo "<tr><td>${user}</td><td>${pid}</td><td>${node}</td><td>${name}</td><td>${command}</td></tr>" >> "${reportDirectory}"/test.html
+						echo "<tr><td>${user}</td><td>${pid}</td><td>${node}</td><td>${name}</td><td>${command}</td></tr>" >> "${reportDirectory}/${hostname}.html" 
 
 					done < <(echo "${y[@]}")
 
-					echo "</table>"  >> "${reportDirectory}"/test.html
+					echo "</table>"  >> "${reportDirectory}/${hostname}.html" 
 				fi
 
 			
@@ -1034,7 +1033,7 @@ EOF
 		fi
 	fi
 
-	echo "<br><br><br>"   >> "${reportDirectory}"/test.html
+	echo "<br><br><br>"   >> "${reportDirectory}/${hostname}.html" 
 }
 
 function print_user {
@@ -1042,7 +1041,7 @@ function print_user {
 	echo -e "\n${INFO}[*]${NC} Printing User Information"
 	echo "-------------------------------------------------------------------------------"
 
-	cat << EOF >> "${reportDirectory}"/test.html
+	cat << EOF >> "${reportDirectory}/${hostname}.html" 
 
 
 	<h1 id="user">User</h1>
@@ -1054,46 +1053,46 @@ EOF
 	if [ -d User ] ; then 
 		if [ -f User/users.txt ]; then
 		
-		echo "<b id='user/users'>Users</b><br>" >> "${reportDirectory}"/test.html
+		echo "<b id='user/users'>Users</b><br>" >> "${reportDirectory}/${hostname}.html" 
 
-		echo "<pre>" >> "${reportDirectory}"/test.html
+		echo "<pre>" >> "${reportDirectory}/${hostname}.html" 
 		while IFS=$'\n' read -r line ; do 
 
-			echo "${line}" | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4 >> "${reportDirectory}"/test.html
+			echo "${line}" | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4 >> "${reportDirectory}/${hostname}.html" 
 
 		done < <(cat User/users.txt)
 
-		echo "</pre><br>" >> "${reportDirectory}"/test.html
+		echo "</pre><br>" >> "${reportDirectory}/${hostname}.html" 
 		fi
 
 		if [ -f User/sudoers ]; then
 		
-		echo "<b id='user/sudoers'>Sudoers</b><br>" >> "${reportDirectory}"/test.html
+		echo "<b id='user/sudoers'>Sudoers</b><br>" >> "${reportDirectory}/${hostname}.html" 
 
-		echo "<pre>" >> "${reportDirectory}"/test.html
+		echo "<pre>" >> "${reportDirectory}/${hostname}.html" 
 
 		while IFS=$'\n' read -r line ; do 
 
-			echo "${line}" | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4 >> "${reportDirectory}"/test.html
+			echo "${line}" | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4 >> "${reportDirectory}/${hostname}.html" 
 
 		done < <(cat User/sudoers)
 
-		echo "</pre><br>" >> "${reportDirectory}"/test.html
+		echo "</pre><br>" >> "${reportDirectory}/${hostname}.html" 
 		fi
 
 		if [ -f User/users.txt ]; then
 		
-		echo "<b id='user/last'>Last Output</b><br>" >> "${reportDirectory}"/test.html
+		echo "<b id='user/last'>Last Output</b><br>" >> "${reportDirectory}/${hostname}.html" 
 
-		echo "<pre>" >> "${reportDirectory}"/test.html
+		echo "<pre>" >> "${reportDirectory}/${hostname}.html" 
 
 		while IFS=$'\n' read -r line ; do 
 
-			echo "${line}" | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4 >> "${reportDirectory}"/test.html
+			echo "${line}" | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4 >> "${reportDirectory}/${hostname}.html" 
 
 		done < <(cat User/last.txt)
 
-		echo "</pre><br>" >> "${reportDirectory}"/test.html
+		echo "</pre><br>" >> "${reportDirectory}/${hostname}.html" 
 
 		fi
 
@@ -1103,32 +1102,32 @@ EOF
 				user=$(echo "${dir}" | awk -F '/' ' { print $2 } ')
 				if [ -f "${dir}/.bash_history" ] ; then
 
-					echo "<b> ${user} - Bash History </b> " >> "${reportDirectory}"/test.html
+					echo "<b> ${user} - Bash History </b> " >> "${reportDirectory}/${hostname}.html" 
 					while IFS=$'\n' read -r line ; do 
 
 						{
 							echo "<pre>"
 							echo "${line}" | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4
-						} >> "${reportDirectory}"/test.html
+						} >> "${reportDirectory}/${hostname}.html" 
 
 					done < <(cat "${dir}/.bash_history")
 
-					echo "</pre><br>" >> "${reportDirectory}"/test.html
+					echo "</pre><br>" >> "${reportDirectory}/${hostname}.html" 
 				fi
 
 				if [ -f "${dir}/.zsh_history" ] ; then
 
-					echo "<b>${user} - Zsh History </b>">> "${reportDirectory}"/test.html
+					echo "<b>${user} - Zsh History </b>">> "${reportDirectory}/${hostname}.html" 
 					while IFS=$'\n' read -r line ; do 
 
 						#Need to find a way to convert the time at the beginning
 						{
 							echo "<pre>"
 							echo "${line}" | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4
-						} >> "${reportDirectory}"/test.html
+						} >> "${reportDirectory}/${hostname}.html" 
 
 					done < <(cat "${dir}/.zsh_history")
-					echo "</pre><br>" >> "${reportDirectory}"/test.html
+					echo "</pre><br>" >> "${reportDirectory}/${hostname}.html" 
 				fi
 			fi
 		done
@@ -1363,6 +1362,8 @@ function main {
 	install_tools
 
 	reportDirectory="/tmp/Report"
+
+	hostname=$(find . -name "*-shasum.txt" -print | cut -d '-' -f 1 | tr -d './')
 
 
 	while getopts ":hdnu" opt; do
