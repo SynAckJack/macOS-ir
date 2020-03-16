@@ -1194,6 +1194,25 @@ function cleanup {
 	fi 
 }
 
+function generate_reports {
+
+	echo -e "\n${INFO}[*]${NC} Generating Reports"
+	echo "-------------------------------------------------------------------------------"
+
+	cd /tmp/Report || exit
+
+	while IFS=$'\n' read -r line; do
+
+		if [[ "${line}" == "files.html" ]] ; then
+			wkhtmltopdf -q -O landscape files.html files.pdf
+		else 
+			wkhtmltopdf -q --print-media-type "${line}" "${line%.html}.pdf"
+		fi
+		
+	done < <(find . -name "*.html")
+
+	echo "Reports generated. These can be found at /tmp/Reports/"
+}
 
 function log {
 	
