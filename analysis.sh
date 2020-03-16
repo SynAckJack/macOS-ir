@@ -1170,6 +1170,31 @@ function parse_sysdiagnose {
 	fi
 }
 
+function cleanup {
+
+	echo -e "\n${INFO}[*]${NC} Performing Cleanup"
+	echo "-------------------------------------------------------------------------------"
+
+	declare -a TMPFAILED
+
+	for f in "${TMPFILES[@]}" ; do
+		if ! rm -rf "${f}" ; then
+			TMPFAILED+=("${f}")
+		fi
+	done
+
+	if [ "${#TMPFAILED[@]}" -gt 0 ] ; then
+		echo "The following files/directories could not be deleted from /tmp/"
+
+		for i in "${TMPFAILED[@]}" ; do
+			echo "${i}"
+		done
+	else
+		echo "Completed Cleanup. All done."
+	fi 
+}
+
+
 function log {
 	
 	local type
