@@ -157,7 +157,21 @@ function requirements {
 	true
 }
 
+function checkSudo {
+	log "INFO" "Checking sudo permissions"
+
+	echo "${INFO}[*]${NC} Checking sudo permissions..."
+
+	if [ "$EUID" -ne 0 ] ; then
+		echo "${FAIL}[-]${NC} Please run with sudo..."
+ 	 	exit 1
+	fi
+
+}
+
 function main {
+
+	checkSudo
 
 	while getopts ":hdnu" opt; do
 		case ${opt} in
