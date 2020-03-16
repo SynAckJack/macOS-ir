@@ -1140,6 +1140,36 @@ EOF
 EOF
 }
 
+function parse_sysdiagnose {
+	
+	echo -e "\n${INFO}[*]${NC} Parsing sysdiagnose"
+	echo "-------------------------------------------------------------------------------"
+
+	if ! mkdir -p "/tmp/sysdiagnose" ; then
+		echo "${FAIL}[-]${NC} Couldn't make extract directory. Exiting..."
+		exit 1
+	fi
+
+	TMPFILES+=("/tmp/sysdiagnose")
+
+	archive=$(find . -name "*.tar.gz" | awk -F './' ' { print $NF }' )
+	echo "${archive}"
+
+	originaldir=$PWD
+	echo "${originaldir}"
+	if [[ -n "${archive}" ]] ; then
+
+		if tar -xf "${archive}" -C /tmp/sysdiagnose ; then
+			echo "Extracted"
+			cd /tmp/sysdiagnose/"${archive%.tar.gz}" || exit
+		else
+			echo "Failed"
+		fi
+	else
+		echo "SYSDIAGNOSE NOT FOUND"
+	fi
+}
+
 function log {
 	
 	local type
