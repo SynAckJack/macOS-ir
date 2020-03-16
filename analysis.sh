@@ -1037,6 +1037,109 @@ EOF
 	echo "<br><br><br>"   >> "${reportDirectory}"/test.html
 }
 
+function print_user {
+
+	echo -e "\n${INFO}[*]${NC} Printing User Information"
+	echo "-------------------------------------------------------------------------------"
+
+	cat << EOF >> "${reportDirectory}"/test.html
+
+
+	<h1 id="user">User</h1>
+	<br>
+
+EOF
+	
+
+	if [ -d User ] ; then 
+		if [ -f User/users.txt ]; then
+		
+		echo "<b id='user/users'>Users</b><br>" >> "${reportDirectory}"/test.html
+
+		echo "<pre>" >> "${reportDirectory}"/test.html
+		while IFS=$'\n' read -r line ; do 
+
+			echo "${line}" | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4 >> "${reportDirectory}"/test.html
+
+		done < <(cat User/users.txt)
+
+		echo "</pre><br>" >> "${reportDirectory}"/test.html
+		fi
+
+		if [ -f User/sudoers ]; then
+		
+		echo "<b id='user/sudoers'>Sudoers</b><br>" >> "${reportDirectory}"/test.html
+
+		echo "<pre>" >> "${reportDirectory}"/test.html
+
+		while IFS=$'\n' read -r line ; do 
+
+			echo "${line}" | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4 >> "${reportDirectory}"/test.html
+
+		done < <(cat User/sudoers)
+
+		echo "</pre><br>" >> "${reportDirectory}"/test.html
+		fi
+
+		if [ -f User/users.txt ]; then
+		
+		echo "<b id='user/last'>Last Output</b><br>" >> "${reportDirectory}"/test.html
+
+		echo "<pre>" >> "${reportDirectory}"/test.html
+
+		while IFS=$'\n' read -r line ; do 
+
+			echo "${line}" | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4 >> "${reportDirectory}"/test.html
+
+		done < <(cat User/last.txt)
+
+		echo "</pre><br>" >> "${reportDirectory}"/test.html
+
+		fi
+
+		for dir in User/*/ ; do
+
+			if ! [[ "${dir}" == "User/daemon/"  ||  "${dir}" == "User/nobody/" ]] ; then
+				user=$(echo "${dir}" | awk -F '/' ' { print $2 } ')
+				if [ -f "${dir}/.bash_history" ] ; then
+
+					echo "<b> ${user} - Bash History </b> " >> "${reportDirectory}"/test.html
+					while IFS=$'\n' read -r line ; do 
+
+						{
+							echo "<pre>"
+							echo "${line}" | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4
+						} >> "${reportDirectory}"/test.html
+
+					done < <(cat "${dir}/.bash_history")
+
+					echo "</pre><br>" >> "${reportDirectory}"/test.html
+				fi
+
+				if [ -f "${dir}/.zsh_history" ] ; then
+
+					echo "<b>${user} - Zsh History </b>">> "${reportDirectory}"/test.html
+					while IFS=$'\n' read -r line ; do 
+
+						#Need to find a way to convert the time at the beginning
+						{
+							echo "<pre>"
+							echo "${line}" | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4
+						} >> "${reportDirectory}"/test.html
+
+					done < <(cat "${dir}/.zsh_history")
+					echo "</pre><br>" >> "${reportDirectory}"/test.html
+				fi
+			fi
+		done
+	fi
+
+	cat << EOF >> "${reportDirectory}"/files.html
+		</body>
+	</html>
+EOF
+}
+
 function log {
 	
 	local type
@@ -1176,6 +1279,9 @@ function main {
 
 	checkSudo
 	install_tools
+
+	reportDirectory="/tmp/Report"
+
 
 	while getopts ":hdnu" opt; do
 		case ${opt} in
