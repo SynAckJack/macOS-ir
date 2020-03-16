@@ -417,6 +417,28 @@ EOF
 		</table>
 		<br><br><br>
 EOF
+}
+
+function analyse_install_history {
+
+	echo -e "\n${INFO}[*]${NC} Analysing install history"
+	echo "-------------------------------------------------------------------------------"
+
+	cat << EOF >> "${reportDirectory}"/test.html
+
+
+	<h1 id="installhistory">Install History</h1>
+	<br>
+		<table>
+EOF
+	
+	while IFS=$'\n' read -r line ; do
+
+		echo "${line}<br>" >> "${reportDirectory}"/test.html
+
+	done < <((grep -B3 -A1 -E "Source: 3rd Party" | sed 's/--//g') < Applications/InstallHistory.txt)
+
+echo "</table><br><br><br>"  >> "${reportDirectory}"/test.html
 
 }
 
