@@ -356,6 +356,70 @@ EOF
 
 }
 
+function analyse_applications {
+
+	echo -e "\n${INFO}[*]${NC} Analysing applications"
+	echo "-------------------------------------------------------------------------------"
+
+
+cat << EOF >> "${reportDirectory}"/test.html
+
+
+	<h1 id="applicationinformation">Application Information</h1>
+	<br>
+		<table>
+EOF
+	unset "LINES[@]"
+
+	if [ -e "Applications/Applications.txt" ] ; then
+
+		sed 's/--//g' < Applications/Applications.txt > /tmp/Applications.txt
+
+		while IFS=$'       ' read -r line; do
+
+			LINES+=("${line}")
+
+		done < /tmp/Applications.txt
+		TMPFILES+=("/tmp/Applications.txt")
+	
+	fi
+
+	for line in "${LINES[@]}" ; do
+
+		title=$(echo "${line}" | awk -F ':' ' { print $1 } ') >> /dev/null
+		value=$(echo "${line}" | cut -d':' -f2-) >> /dev/null
+
+		if [ -n "${title}" ] || [ -n "${value}" ] ; then
+
+			if [ "${title}" == "Location" ] ; then
+				{
+					echo "<tr>"
+					echo "<td>${title}: </td>"
+					echo "<td>${value}</td>"
+					echo "</tr>"
+					echo "<tr><td>------------------------------</td><td>--------------------------------------------------------------------------------------------------------------------------------------------------------</td></tr>"
+				}	 >> "${reportDirectory}"/test.html
+			else 
+				{
+					echo "<tr>"
+					echo "<td>${title}: </td>"
+					echo "<td>${value}</td>"
+					echo "</tr>"
+				}  >> "${reportDirectory}"/test.html
+			fi
+		fi
+
+
+	done 
+
+	cat << EOF >> "${reportDirectory}"/test.html
+
+		</table>
+		<br><br><br>
+EOF
+
+}
+
 function log {
 	
 	local type
@@ -397,8 +461,6 @@ function decrypt {
  			read -rp 'Passphrase: ' passphrase
  		fi
   	done
-
-
 }
 
 function network {
