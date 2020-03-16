@@ -105,15 +105,16 @@ function cLaunch {
 
 	while IFS=$'\n' read -r user; do
 
-		if sudo crontab -u "${user}" -l 2> /dev/null | grep -c 'No crontab' >> /dev/null ; then
+		if  [[ -f /usr/lib/cron/tabs/"${user}" ]] ; then
 			mkdir -p "${tempDirectory}/${user}"
-			if sudo cp -R /usr/lib/cron/jobs/* "${tempDirectory}/${user}"/ ; then
+
+			if sudo cat /usr/lib/cron/tabs/"${user}" >> "${tempDirectory}/${user}"/cron.txt ; then
 				log "INFO" "cron: ${user} copied."
 			else
 				log "WARN" "cron: ${user} not copied."
-
 			fi
 		fi
+
 		USERS+=("${user}")
 
 	done < <(dscl . list /Users | grep -v '_')
