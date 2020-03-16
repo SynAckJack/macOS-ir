@@ -774,6 +774,30 @@ EOF
 
 }
 
+function print_disk {
+
+	echo -e "\n${INFO}[*]${NC} Printing Disk Information"
+	echo "-------------------------------------------------------------------------------"
+
+	cat << EOF >> "${reportDirectory}"/test.html
+
+	<h1 id="disk">Disk Information</h1>
+EOF
+
+	if [ -e disk/diskutil.txt ] ; then
+		echo "<pre>" >> "${reportDirectory}"/test.html
+		while IFS=$'\r' read -r line ; do
+			echo "${line}" | expand -t4 >> "${reportDirectory}"/test.html
+		done < <(cat disk/diskutil.txt)
+		echo "</pre>" >> "${reportDirectory}"/test.html
+
+		
+	fi
+
+	echo "<br><br><br>"   >> "${reportDirectory}"/test.html		
+
+}
+
 function log {
 	
 	local type
