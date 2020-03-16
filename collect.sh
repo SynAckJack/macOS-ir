@@ -226,6 +226,8 @@ function cUser {
 
 function cApplication {
 
+	declare -a APPLICATIONS
+
 	if ! mkdir "Applications" ; then
 		echo "${FAIL}[-]${NC} Couldn't make disk directory. Exiting..."
 		exit 1
@@ -234,17 +236,43 @@ function cApplication {
 	echo -e "\nGathering Application Data"
 	echo "-------------------------------------------------------------------------------"
 
-	echo -e "\n --SPApplicationsDataType \n$(system_profiler SPApplicationsDataType)" >> Applications/Applications.txt
+	echo -e "$(system_profiler SPApplicationsDataType | grep -E -B6 "Location:" | grep -E '^    .*:' | grep -E -A3 -B2 'Obtained from: Identified Developer|Obtained from: Unknown')" >> Applications/Applications.txt
 
 	echo -e "\nGathering Install History"
 	echo "-------------------------------------------------------------------------------"
-	echo -e "\n --SPInstallHistoryDataType \n$(system_profiler SPInstallHistoryDataType)" >> Applications/InstallHistory.txt
+	echo -e "$(system_profiler SPInstallHistoryDataType)" >> Applications/InstallHistory.txt
 
 	echo -e "\nGathering Currently Running Processes"
 	echo "-------------------------------------------------------------------------------"
 
 	# shellcheck disable=SC2009
-	echo -e "\n-- ps aux \n$(ps aux | grep -v '_' | sort)" >> Applications/processes.txt
+	echo -e "$(ps xa -o 'user, pid, command' | grep -v '_' | tr -s ' ' | cut -d ' ' -f 1- | sort)" >> Applications/processes.txt
+
+	echo -e "\nChecking Signing and Notarization of Apps"
+	echo "-------------------------------------------------------------------------------"
+
+	while IFS=$'\n' read -r line ; do
+
+		APPLICATIONS+=("${line}")
+
+	done < <(system_profiler SPApplicationsDataType | grep 'Location: ' | awk -F 'Location: ' ' { print $2 } ')
+
+	for app in "${APPLICATIONS[@]}" ; do
+
+		if ! [ "${app}" == "/Applications/Xcode.app" ] ; then
+			if codesign --verify --deep --strict "${app}" 2>&1 ; then
+				if stapler validate "${app}" >/dev/null 2>&1 ; then
+					echo "${app}" >> Applications/notarized.txt
+				else
+					echo "${app}" >> Applications/signed.txt
+				fi
+			else
+				echo "${app}" >> Applications/notsigned.txt
+			fi
+		else
+			echo "SKIPPING XCODE"
+		fi
+	done
 
 	echo -e "\nGenerating Hash of Non-Apple Application Executables"
 	echo "-------------------------------------------------------------------------------"
@@ -254,7 +282,7 @@ function cApplication {
 	while IFS=$'\n' read -r app; do
 
 		directory=$(echo "${app}" | awk -F ': ' ' { print $NF } ' )
-		echo -e "\n ${directory}" >> hash.txt
+		# echo -e "\n ${directory}" >> Applications/hash.txt
 
 		find "${directory}" -type f -perm +0111 -exec shasum {} \; >> Applications/hash.txt		
 
