@@ -863,6 +863,36 @@ cat << EOF >> "${reportDirectory}"/files.html
 EOF
 }
 
+function analyse_cron {
+
+	echo -e "\n${INFO}[*]${NC} Printing Cron Jobs"
+	echo "-------------------------------------------------------------------------------"
+
+	cat << EOF >> "${reportDirectory}"/test.html
+
+
+	<h1 id="cron">Cron Jobs</h1>
+	<br>
+
+EOF
+
+	for job in Launch/Cron/* ; do 
+	
+		if [ -f "${job}/cron.txt" ] ; then
+			{
+				echo "<p><b>${job} Cron Jobs: </b></p>"
+				echo "<pre>"
+				sudo cat "${job}/cron.txt"
+			}  >> "${reportDirectory}"/test.html
+		fi
+		echo "</pre>" >> "${reportDirectory}"/test.html
+		echo "<br>"  >> "${reportDirectory}"/test.html
+	done
+
+	echo "<br><br><br>" >> "${reportDirectory}"/test.html	
+}
+
+
 function log {
 	
 	local type
