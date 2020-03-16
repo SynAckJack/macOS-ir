@@ -1041,102 +1041,210 @@ function print_user {
 	echo -e "\n${INFO}[*]${NC} Printing User Information"
 	echo "-------------------------------------------------------------------------------"
 
-	cat << EOF >> "${reportDirectory}/${hostname}.html" 
+	cat << EOF >> "${reportDirectory}/${hostname}.html"
 
 
 	<h1 id="user">User</h1>
 	<br>
 
 EOF
+
+	declare -a SUDOCOMMANDS
 	
 
 	if [ -d User ] ; then 
 		if [ -f User/users.txt ]; then
 		
-		echo "<b id='user/users'>Users</b><br>" >> "${reportDirectory}/${hostname}.html" 
+			echo "<b id='user/users'>Users</b><br>" >> "${reportDirectory}/${hostname}.html"
 
-		echo "<pre>" >> "${reportDirectory}/${hostname}.html" 
-		while IFS=$'\n' read -r line ; do 
+			echo "<pre>" >> "${reportDirectory}/${hostname}.html"
+			while IFS=$'\n' read -r line ; do 
 
-			echo "${line}" | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4 >> "${reportDirectory}/${hostname}.html" 
+				echo "${line}" | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4 >> "${reportDirectory}/${hostname}.html"
 
-		done < <(cat User/users.txt)
+			done < <(cat User/users.txt)
 
-		echo "</pre><br>" >> "${reportDirectory}/${hostname}.html" 
+			echo "</pre><br>" >> "${reportDirectory}/${hostname}.html"
 		fi
 
 		if [ -f User/sudoers ]; then
 		
-		echo "<b id='user/sudoers'>Sudoers</b><br>" >> "${reportDirectory}/${hostname}.html" 
+			echo "<b id='user/sudoers'>Sudoers</b><br>" >> "${reportDirectory}/${hostname}.html"
 
-		echo "<pre>" >> "${reportDirectory}/${hostname}.html" 
+			echo "<pre>" >> "${reportDirectory}/${hostname}.html"
 
-		while IFS=$'\n' read -r line ; do 
+			while IFS=$'\n' read -r line ; do 
 
-			echo "${line}" | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4 >> "${reportDirectory}/${hostname}.html" 
+				echo "${line}" | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4 >> "${reportDirectory}/${hostname}.html"
 
-		done < <(cat User/sudoers)
+			done < <(cat User/sudoers)
 
-		echo "</pre><br>" >> "${reportDirectory}/${hostname}.html" 
+			echo "</pre><br>" >> "${reportDirectory}/${hostname}.html"
 		fi
 
 		if [ -f User/users.txt ]; then
-		
-		echo "<b id='user/last'>Last Output</b><br>" >> "${reportDirectory}/${hostname}.html" 
+			
+			echo "<b id='user/last'>Last Output</b><br>" >> "${reportDirectory}/${hostname}.html"
 
-		echo "<pre>" >> "${reportDirectory}/${hostname}.html" 
+			echo "<pre>" >> "${reportDirectory}/${hostname}.html"
 
-		while IFS=$'\n' read -r line ; do 
+			while IFS=$'\n' read -r line ; do 
 
-			echo "${line}" | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4 >> "${reportDirectory}/${hostname}.html" 
+				echo "${line}" | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4 >> "${reportDirectory}/${hostname}.html"
 
-		done < <(cat User/last.txt)
+			done < <(cat User/last.txt)
 
-		echo "</pre><br>" >> "${reportDirectory}/${hostname}.html" 
+			echo "</pre><br>" >> "${reportDirectory}/${hostname}.html"
 
 		fi
+
+		{
+			echo "<h1 id='commands'>Command History</h1><br>"
+			echo "<i>The following contains a list of commands ran by the root user. There is also a list of other command run by other users containing 'sudo'.<br>" 
+			echo "A list of all commands run by each user can be found in 'User Command History.pdf'.</i><br><br>"
+		} >> "${reportDirectory}/${hostname}.html"
 
 		for dir in User/*/ ; do
 
 			if ! [[ "${dir}" == "User/daemon/"  ||  "${dir}" == "User/nobody/" ]] ; then
 				user=$(echo "${dir}" | awk -F '/' ' { print $2 } ')
-				if [ -f "${dir}/.bash_history" ] ; then
+				if [[ "${dir}" == "User/root/" ]] ; then
 
-					echo "<b> ${user} - Bash History </b> " >> "${reportDirectory}/${hostname}.html" 
-					while IFS=$'\n' read -r line ; do 
+					if [ -f "${dir}/.bash_history" ] ; then
 
-						{
-							echo "<pre>"
-							echo "${line}" | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4
-						} >> "${reportDirectory}/${hostname}.html" 
+						echo "<b> ${user} - Bash History </b> " >> "${reportDirectory}/${hostname}.html"
+						while IFS=$'\n' read -r line ; do 
 
-					done < <(cat "${dir}/.bash_history")
+							{
+								echo "<pre>"
+								echo "${line}" | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4
+							} >> "${reportDirectory}/${hostname}.html"
 
-					echo "</pre><br>" >> "${reportDirectory}/${hostname}.html" 
-				fi
+						done < <(cat "${dir}/.bash_history")
 
-				if [ -f "${dir}/.zsh_history" ] ; then
+						echo "</pre><br>" >> "${reportDirectory}/${hostname}.html"
+					fi
 
-					echo "<b>${user} - Zsh History </b>">> "${reportDirectory}/${hostname}.html" 
-					while IFS=$'\n' read -r line ; do 
+					if [ -f "${dir}/.zsh_history" ] ; then
 
-						#Need to find a way to convert the time at the beginning
-						{
-							echo "<pre>"
-							echo "${line}" | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4
-						} >> "${reportDirectory}/${hostname}.html" 
+						echo "<b>${user} - Zsh History </b>">> "${reportDirectory}/${hostname}.html"
+						while IFS=$'\n' read -r line ; do 
 
-					done < <(cat "${dir}/.zsh_history")
-					echo "</pre><br>" >> "${reportDirectory}/${hostname}.html" 
+							tmp=$(echo "${line}" | cut -d ':' -f 2 | tr -d '[:blank:]')
+
+							if [[ ${tmp} =~ ^[0-9]+$ ]] ; then
+								
+								cmdDate=$(date -r "${tmp}" '+%d/%m/%Y:%H:%M:%S')
+								command=$(echo "${line}" | cut -d ';' -f 2 | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g')
+
+								{
+									echo "<pre>"
+									echo "${cmdDate}  --  ${command}"
+								} >> "${reportDirectory}/${hostname}.html"
+							else
+								{
+									echo "<pre>"
+									echo "${line}"
+								} >> "${reportDirectory}/${hostname}.html"
+
+							fi
+							
+						done < <(cat "${dir}/.zsh_history")
+						echo "</pre><br>" >> "${reportDirectory}/${hostname}.html"
+					fi
+				else
+					#CHECK IF LINE CONTAINS SUDO, IF SO MAKE RED
+					if [ -f "${dir}/.bash_history" ] ; then
+
+						if ! [ -f "${reportDirectory}/User Command History.html" ] ; then
+							create_secondary_html "User Command History"
+						fi
+
+						echo "<b> ${user} - Bash History </b> " >> "${reportDirectory}/User Command History.html"
+						while IFS=$'\n' read -r line ; do 
+
+							if echo "${line}" | grep -c 'sudo' >> /dev/null; then
+									SUDOCOMMANDS+=("${line}")
+							fi
+
+							{
+								echo "<pre>"
+								echo "${line}" | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4
+							} >> "${reportDirectory}/User Command History.html"
+
+						done < <(cat "${dir}/.bash_history")
+
+						write_sudo_commands "${user}" "bash"
+
+						echo "</pre><br>" >> "${reportDirectory}/User Command History.html"
+					fi
+
+					if [ -f "${dir}/.zsh_history" ] ; then
+
+						echo "<b>${user} - Zsh History </b>" >> "${reportDirectory}/User Command History.html"
+						while IFS=$'\n' read -r line ; do 
+
+							tmp=$(echo "${line}" | cut -d ':' -f 2 | tr -d '[:blank:]')
+
+							if [[ ${tmp} =~ ^[0-9]+$ ]] ; then
+								
+								cmdDate=$(date -r "${tmp}" '+%d/%m/%Y:%H:%M:%S')
+								command=$(echo "${line}" | cut -d ';' -f 2 | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g')
+
+								if echo "${command}" | grep -c 'sudo'  >> /dev/null ; then
+									SUDOCOMMANDS+=("${command}")
+								fi
+
+								{
+									echo "<pre>"
+									echo "${cmdDate}  --  ${command}"
+								} >> "${reportDirectory}/User Command History.html"
+							else
+								{
+									echo "<pre>"
+									echo "${line}"
+								} >> "${reportDirectory}/User Command History.html"
+
+							fi
+							
+						done < <(cat "${dir}/.zsh_history")
+
+						write_sudo_commands "${user}" "Zsh"
+
+						echo "</pre><br>" >> "${reportDirectory}/User Command History.html"
+
+					fi
 				fi
 			fi
 		done
 	fi
 
-	cat << EOF >> "${reportDirectory}"/files.html
+	cat << EOF >> "${reportDirectory}/${hostname}.html"
 		</body>
 	</html>
 EOF
+}
+
+function write_sudo_commands {
+	
+	user="$1"
+	shell="$2"
+
+	if [ "${#SUDOCOMMANDS[@]}" -gt 0 ] ; then
+
+		{	
+			echo "<pre>"
+			echo "<b>${user} ${shell} Sudo Commands</b><br><br>"
+			for c in "${SUDOCOMMANDS[@]}" ; do
+				echo "${c}"
+			done
+			echo "</pre><br><br>"
+		} >> "${reportDirectory}/${hostname}.html"
+	fi
+	
+	unset "SUDOCOMMANDS[@]"
+
+}
 }
 
 function parse_sysdiagnose {
