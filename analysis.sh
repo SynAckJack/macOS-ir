@@ -112,6 +112,98 @@ function read_file {
 
 }
 
+function create_main_html {
+
+	hostname=$(find . -name "*-shasum.txt" -print | cut -d '-' -f 1 | tr -d './')
+
+		cat << EOF > "${reportDirectory}"/test.html
+<!DOCTYPE html>
+
+<html>
+
+	<head>
+	    <title>Analysis</title>
+	</head>
+
+	<style>
+		html *
+			{
+			font-size: 1em !important;
+			color: #000 !important;
+			font-family: Arial;
+		}
+
+		h1 { 
+			font-size: 2em !important;
+			font-weight: bold !important;
+		}
+
+		@media print {
+    		.pagebreak { 
+    			page-break-before: always; 
+    		} /* page-break-after works, as well */
+		}
+
+		pre {
+		   font-family:monaco!important;
+		   font-size: 9px;
+		   line-height: 0.9;
+		}
+
+		toc {
+			font-size: 14px;
+		}
+
+		pagetitle {
+			font-size: 36px;
+			align: left;
+		}
+
+	</style>
+
+	<body>
+
+	<h1 class="pagetitle" style="padding-top: 100px">${hostname} - Analysis Report</h1>
+	<h2>$(date)</h2>
+
+	<div class="pagebreak"></div>
+
+	<div class="toc">
+		<p align=centre><h1><b>Contents</b></h1></p>
+			<ul class="toc_list">
+				<li><a href="#systeminformation">System Information</a>
+				<li><a href="#securityinformation">Security Information</a></li>
+				<li><a href="#applicationinformation">Application Information</a></li>
+				<li><a href="#installhistory">Install History</a></li>
+				<li><a href="#hashes">Hashes of Executables</a></li>
+				<li><a href="#browsers">Browsers</a></li>
+				<ul>
+					<li><a href="#browsers/safari">Safari</a></li>
+					<li><a href="#browsers/chrome">Chrome</a></li>
+					<li><a href="#browsers/firefox">Firefox</a></li>
+				</ul>
+				<li><a href="#disk">Disk Information</a></li>
+				<li><a href="#cron">Cron Jobs</a></li>
+				<li><a href="#launchagents">Launch Agents</a></li>
+				<li><a href="#network">Network Information</a></li>
+				<ul>
+					<li><a href="#network/arp">ARP Table</a></li>
+					<li><a href="#network/ifconfig">ifconfig</a></li>
+					<li><a href="#network/connections">Network Connections</a></li>
+				</ul>
+				<li><a href="#user">User Information</a></li>
+				<ul>
+					<li><a href="#user/users">List of Users</a></li>
+					<li><a href="#user/sudoers">Sudoers File</a></li>
+					<li><a href="#user/last">Last Output</a></li>
+				</ul>
+			</ul>
+	</div>
+
+	<div class="pagebreak"></div>
+EOF
+}
+
 function log {
 	
 	local type
