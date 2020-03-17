@@ -1348,11 +1348,20 @@ function disk {
 
 	diskName="$1"
 
+	if "${diskName}" == "None" ; then
+		echo "FAIL. Please enter a disk name..."
+		exit 1
+	fi
+
+	volume=$(echo "$diskName" | awk -F '/' ' { print $3 }')
+
 	echo "${INFO}[*]${NC} Checking disk. Please enter the passphrase..."
 	read -rp 'Passphrase: ' passphrase
 
 	if echo -n "${passphrase}" | hdiutil attach "${diskName}" -stdinpass  ; then
 		echo "${PASS}[+]${NC} Succesfully attached disk."
+		cd "/Volumes/${volume}"
+
 		log "PASS" "Disk mounted"
 	else
 		echo "${FAIL}[-]${NC} Incorrect passphrase. Exiting..."
