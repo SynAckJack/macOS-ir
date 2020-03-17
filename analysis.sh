@@ -26,6 +26,26 @@ EOF
 		exit 0
 }
 
+function log {
+	
+	local type
+	local message
+
+	type=$1
+	message=$2
+	if [[ ! ${type} == "FINISHED" ]] ; then
+		LOGS+=("$(date +%H:%M:%S), ${type}, ${message}")
+	else
+		LOGS+=("$(date +%H:%M:%S), ${type}, ${message}")
+		lHostName="$(scutil --get LocalHostName)"
+
+		for i in "${LOGS[@]}" ; do
+			echo "	${i}"  >> "${lHostName}-$(date +%H:%M:%S)-LOG.csv"
+		done
+	fi
+}
+
+
 function check_hash {
 
 	echo -e "\n${INFO}[*]${NC} Checking shasum of files"
@@ -1269,26 +1289,6 @@ function cleanup {
 	fi 
 }
 
-
-function log {
-	
-	local type
-	local message
-
-	type=$1
-	message=$2
-	if [[ ! ${type} == "FINISHED" ]] ; then
-		LOGS+=("$(date +%H:%M:%S), ${type}, ${message}")
-	else
-		LOGS+=("$(date +%H:%M:%S), ${type}, ${message}")
-		lHostName="$(scutil --get LocalHostName)"
-
-		for i in "${LOGS[@]}" ; do
-			echo "	${i}"  >> "${lHostName}-$(date +%H:%M:%S)-LOG.csv"
-		done
-	fi
-}
-
 function decrypt {
 	
 	local passphrase
@@ -1391,18 +1391,6 @@ function usb {
 		echo "${FAIL}[-]${NC} Incorrect passphrase. Exiting..."
 		exit 1
 	fi
-}
-
-function checkSudo {
-	log "INFO" "Checking sudo permissions"
-
-	echo "${INFO}[*]${NC} Checking sudo permissions..."
-
-	if [ "$EUID" -ne 0 ] ; then
-		echo "${FAIL}[-]${NC} Please run with sudo..."
- 	 	exit 1
-	fi
-
 }
 
 function generate_reports {
