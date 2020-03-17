@@ -392,16 +392,40 @@ function cDiskInfo {
 
 function collect {
 	
+	local lHostName
+	
 	echo "${INFO}[*]${NC} Started collection...Writing to collect.log"
 	log "INFO" "Started Collection"
 
-	cSysdiagnose
-	cSystemInfo
-	cDiskInfo
-	cNetworkInfo
-	cSecurity
-	cApplication
-	cUser
+	lHostName="$(scutil --get LocalHostName)"
+
+
+	echo -e "\nStarting tcpdump"
+	echo "-------------------------------------------------------------------------------"
+
+	mkdir "Network"
+
+	tcpdump -n -U -P >> "Network/${lHostName}".pcapng & 
+	sleep 5
+
+	# time cSysdiagnose
+	time cSystemInfo
+	time cDiskInfo
+	time cNetworkInfo
+	time cSecurity
+	time cApplication
+	time cUser
+	time cLaunch
+	time cBrowsers
+	time cFiles
+
+	echo -e "\nEnding tcpdump"
+	echo "-------------------------------------------------------------------------------"
+
+	if ! pkill -15 "tcpdump" ; then
+		sleep 5
+		pkill "tcpdump"
+	fi
 
 }
 
