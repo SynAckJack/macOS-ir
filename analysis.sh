@@ -1376,9 +1376,10 @@ function usb {
 
 		if cd /Volumes/"${usbName}" ; then
 			echo "${PASS}[+]${NC} USB exists and is available. Locating .tar..."
-			mkdir output
-			if tar -xvf output.tar -C output ; then
+			mkdir -p ~/output
+			if tar -xvf output.tar -C ~/output ; then
 				echo "${PASS}[+]${NC} .tar extracted to 'output' successfully..."
+				cd ~/output
 			else
 				echo "${WARN}[!]${NC} Failed to extract .tar. Exiting..."
 				exit 1
