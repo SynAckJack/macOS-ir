@@ -443,7 +443,7 @@ function disk {
 		if [[ ! -e "$directory" ]] ; then
 			mkdir "$directory" && cd "$directory"
 
-			# COLLECT
+			lHostName="$(scutil --get LocalHostName)"
 
 			collect
 
@@ -457,17 +457,19 @@ function disk {
 			passphrase=$(head -c24 < /dev/urandom | base64 | tr -cd '[:alnum:]')
 
 			echo "${INFO}[*]${NC} Performing shasum of files..."
-			log "INFO" "Shasum started"
+				log "INFO" "Shasum started"
 
-			if find . -type f -exec shasum -a 256 '{}' \; >> "${lHostName}"-shasum.txt ; then
-				echo "${PASS}[+]${NC} shasum completed. Stored in: ${lHostName}-shasum.txt"
-				log "PASS" "shasum completed"
-			else
-				echo "${WARN}[!]${NC} shasum failed. Continuing..."
-				log "WARNING" "shasum failed"
-			fi
+				if find . -type f -exec shasum -a 256 '{}' \; >> "${lHostName}"-shasum.txt ; then
+					echo "${PASS}[+]${NC} shasum completed. Stored in: ${lHostName}-shasum.txt"
+					log "PASS" "shasum completed"
+				else
+					echo "${WARN}[!]${NC} shasum failed. Continuing..."
+					log "WARNING" "shasum failed"
+				fi
 
-			if echo -n "${passphrase}" | hdiutil create -fs apfs -size "${dirSize}"kb -stdinpass -encryption AES-128 -srcfolder "${directory}" "${directory}/output".dmg  ; then
+				#REMOVE -format UDRW BEFORE FINALISING
+
+			if echo -n "${passphrase}" | hdiutil create -fs apfs -size "${dirSize}"kb -format UDRW -stdinpass -encryption AES-128 -srcfolder "${directory}" "${directory}/output".dmg  ; then
 				echo "${PASS}[+]${NC} Succesfully created disk image with data at ${directory}/output.dmg."
 				log "PASS" "Disk image created. Directory: ${directory}, Passphrase: ${passphrase}"
 
@@ -509,6 +511,8 @@ function usb {
 				log "INFO" "USB prepared. Passphrase: ${passphrase}"
 				#COLLECT
 
+				collect 
+				
 				echo "${INFO}[*]${NC} Performing shasum of files..."
 				log "INFO" "Shasum started"
 
@@ -580,8 +584,9 @@ function network {
 		echo "${INFO}[*]${NC} Creating temporary directory at ${directory}"
 		log "INFO" "Temporary directory created at ${directory}"
 	
-		if [[ ! -e "$directory" ]] ; then
-			mkdir "$directory" && cd "$directory"
+		if ! [[ -d "${directory}" ]] ; then
+			mkdir "${directory}" && cd "${directory}"
+			echo "BAM $PWD"
 		else
 			echo "${FAIL}[-]${NC} Failed to create directory. Exiting..."
 			log "ERROR" "Couldn't create directory ${directory}"
@@ -593,8 +598,21 @@ function network {
 		collect
 
 		# Compress files
+		echo "${INFO}[*]${NC} Performing Shasum of files..."
+		log "INFO" "Shasum started"
+
+		lHostName="$(scutil --get LocalHostName)"
+
+		if find . -type f -exec shasum -a 256 '{}' \; >> "${lHostName}"-shasum.txt ; then
+			echo "${PASS}[+]${NC} Shasum complete. Stored in: ${lHostName}-shasum.txt"
+			log "INFO" "Shasum completed"
+		else
+			echo "${WARN}[!]${NC} Shasum failed. Continuing..."
+			log "WARN" "Shasum failed"
+		fi
+
 		if tar cvf output.tar ./* > /dev/null 2>&1 ; then
-			lHostName="$(scutil --get LocalHostName)"
+			
 			passphrase=$(head -c24 < /dev/urandom | base64 | tr -cd '[:alnum:]')
 			if openssl enc -e -aes256 -in output.tar -out "${lHostName}".tar -pass pass:"${passphrase}"; then
 				echo "${PASS}[+]${NC} Successfully compressed and encrypted data. Passphrase: ${passphrase}"
@@ -611,23 +629,12 @@ function network {
 			exit 1
 		fi
 		
-		echo "${INFO}[*]${NC} Performing Shasum of files..."
-		log "INFO" "Shasum started"
-
-		if find . -type f -exec shasum -a 256 '{}' \; >> "${lHostName}"-shasum.txt ; then
-			echo "${PASS}[+]${NC} Shasum complete. Stored in: ${lHostName}-shasum.txt"
-			log "INFO" "Shasum completed"
-		else
-			echo "${WARN}[!]${NC} Shasum failed. Continuing..."
-			log "WARN" "Shasum failed"
-		fi
-
 		echo "${INFO}[*]${NC} Starting nc transfer to ${ipPort}..."
 		log "INFO" "netcat started"
 
 		echo "${INFO}[*]${NC} Waiting on connection..."
 
-		if tar -zcf - . | pv -f | nc -n "${ip}" "${port}" ; then
+		if nc -n "${ip}" "${port}" -w 30 < "${lHostName}.tar" ; then
 			echo "${PASS}[+]${NC} Successfully transferred data. Remember passphrase: ${passphrase}"
 			log "INFO" "Data transferred successfully"
 		fi
