@@ -15,12 +15,14 @@ WARN=$(echo -en '\033[1;33m')
 
 function usage {
 	cat << EOF
-./diskImage [-u | -n | -d | -h] [USB Name | Port | Disk Image Name]
+./analysis.sh [-u | -n | -d | -h] [USB Name | Port | Disk Image Name]
 Usage:
 	-h		- Show this message
 	-u		- Analyse data stored on an external drive.
 	-d		- Analyse data stored on a disk image.
 	-n		- Receive collected data from nc.
+	-i 		- Install tools only.
+			- All tools are installed before running any option, however this allows for pre-installing if need be.
 		
 EOF
 		exit 0
@@ -78,8 +80,6 @@ function check_hash {
 	else
 		echo "All files passed checksum."
 	fi
-
-	
 }
 
 function read_file {
