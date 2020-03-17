@@ -473,7 +473,7 @@ function print_signing {
 	echo -e "\n${INFO}[*]${NC} Printing Non-Signed Applications"
 	echo "-------------------------------------------------------------------------------"
 
-	cat << EOF > "${reportDirectory}/${hostname}.html"
+	cat << EOF >> "${reportDirectory}/${hostname}.html"
 
 
 	<h1 id="signing">Non-Signed Applications</h1>
@@ -481,58 +481,64 @@ function print_signing {
 
 EOF
 
-	if [ -f ~/Github/macos-ir/Applications/notsigned.txt ] ; then
+	if [ -f /Applications/notsigned.txt ] ; then
 
 		echo "<i>Note: The following applications are classed as 'Not Signed'. This can be due to them not being signed or failing the requirements for signing.</i><br><br>" >> "${reportDirectory}/${hostname}.html" 
 		while IFS=$'\n' read -r line ; do
 
-			echo "${line}<br>" >> "${reportDirectory}/${hostname}.html"  
+			echo "${line}<br>" >> "${reportDirectory}/${hostname}.html" 
 
-		done < <(cat ~/Github/macos-ir/Applications/notsigned.txt)
+		done < <(cat /Applications/notsigned.txt)
 
 	else
 		echo "All Applications are signed!<br>" >> "${reportDirectory}/${hostname}.html" 
 	fi
 
-	echo "<br><br><i>A list of all Applications and their signing status can be found in 'Application Signing Status.pdf'.</i><br>" >> "${reportDirectory}/${hostname}.html" 
+	echo "<br><br><i>A list of all Applications and their signing status can be found in 'Application Signing Status.pdf'.</i><br>" >> "${reportDirectory}/${hostname}.html"
 
-	if [ -f ~/Github/macos-ir/Applications/notsigned.txt ] && [ -f ~/Github/macos-ir/Applications/signed.txt ] && [ -f ~/Github/macos-ir/Applications/notarized.txt ] ; then
+	if [ -f /Applications/notsigned.txt ] && [ -f /Applications/signed.txt ] ; then
 	
 		create_secondary_html "Application Signing Status"
 
-		{
-			echo "<h1>Notarized Applications</h1><br>"
-			echo "<i>Note: Notarized Applications are checked for malware by Apple. These can (typically) be inherently trusted due to this.</i><br>"
-		}  >> "${reportDirectory}/Application Signing Status.html"
+		if [ -f /Applications/notarized.txt ] ; then
 
-		while IFS=$'\n' read -r line ; do
+			{
+				echo "<h1>Notarized Applications</h1><br>"
+				echo "<i>Note: Notarized Applications are checked for malware by Apple. These can (typically) be inherently trusted due to this.</i><br><br>"
+			}  >> "${reportDirectory}/Application Signing Status.html"
 
-			echo "${line}<br>" >> "${reportDirectory}/Application Signing Status.html"
+			while IFS=$'\n' read -r line ; do
 
-		done < <(cat ~/Github/macos-ir/Applications/notarized.txt)
+				echo "${line}<br>" >> "${reportDirectory}/Application Signing Status.html"
+
+			done < <(cat /Applications/notarized.txt)
+
+		fi
 
 		{
 			echo "<br><br><br>"
 			echo "<h1>Signed Applications</h1><br>"
-			echo "<i>Note: Although Applications have been signed, they can still be malicious. A certificate can be revoked if Apple deem the Application as malicious, however it can still be distributed and installed.</i><br>"
+			echo "<i>Note: Although Applications have been signed, they can still be malicious. A certificate can be revoked if Apple deem the Application as malicious, however it can still be distributed and installed.</i><br><br>"
 		} >> "${reportDirectory}/Application Signing Status.html"
 
 		while IFS=$'\n' read -r line ; do
 
 			echo "${line}<br>" >> "${reportDirectory}/Application Signing Status.html"
 
-		done < <(cat ~/Github/macos-ir/Applications/signed.txt)
+		done < <(cat /Applications/signed.txt)
 
 		{
 			echo "<br><br><br>"
 			echo "<h1>Non-Signed Applications</h1><br>"
+			echo "<i>Note: These Applications may either be not signed at all or are signed but do not fall under Apple's requirements.<br>
+			More information on these requirements can be found at developer.apple.com</i><br><br>"
 		}  >> "${reportDirectory}/Application Signing Status.html"
 
 		while IFS=$'\n' read -r line ; do
 
 			echo "${line}<br>" >> "${reportDirectory}/Application Signing Status.html"
 
-		done < <(cat ~/Github/macos-ir/Applications/notsigned.txt)
+		done < <(cat /Applications/notsigned.txt)
 	fi
 
 }
@@ -1295,7 +1301,6 @@ function decrypt {
 	local tarFile
 
 	tarFile=$(find . -name '*.tar' )	
-	mkdir output
 
 	echo "${INFO}[*]${NC} Decrypting .tar file. Please enter passphrase: "
 	read -rp 'Passphrase: ' passphrase
@@ -1303,8 +1308,11 @@ function decrypt {
  	while [ "${passphrase}" != "q" ] ; do
  		echo "Attempting to decrypt with: ${passphrase}..."
 
- 		if openssl enc -d -aes256 -in "${tarFile}" -pass pass:"${passphrase}" | tar xz -C output ; then
- 			echo "${PASS}[+]${NC} Successfully decrypted .tar to directory: output."
+ 		if openssl enc -d -aes256 -in "${tarFile}" -pass pass:"${passphrase}" | tar xz  ; then
+ 			echo "${PASS}[+]${NC} Successfully decrypted .tar to directory: ~/output."
+ 			echo "before $PWD"
+ 			#cd ~/output
+ 			echo "after $PWD"
  			break
  		else
  			echo "${WARN}[!]${NC} Failed to decrypt .tar. Please enter new passphrase or 'q' to exit..."
