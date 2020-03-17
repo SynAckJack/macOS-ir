@@ -1323,9 +1323,11 @@ function network {
 
 	if [[ "${port}" =~ ^[0-9]{1,5} ]] && [[ "${port}" -le 65535 ]] ; then
 		
+		mkdir -p ~/output && cd ~/output
+
 		echo "${INFO}[*]${NC} Connecting to nc on port ${port}..."
 
-		if nc -l "${port}" | pv -f | tar -zxf - ; then
+		if nc -l "${port}" > received.tar; then
 			echo "${PASS}[+]${NC} Successfully received data."
 
 			decrypt
