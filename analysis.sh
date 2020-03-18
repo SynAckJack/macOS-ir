@@ -21,13 +21,13 @@ function log {
 	type=$1
 	message=$2
 	if [[ ! ${type} == "FINISHED" ]] ; then
-		LOGS+=("$(date +%H:%M:%S), ${type}, ${message}")
+		LOGS+=("$(date +"%Y-%m-%dT%H:%M:%SZ"), ${type}, ${message}")
 	else
-		LOGS+=("$(date +%H:%M:%S), ${type}, ${message}")
+		LOGS+=("$(date +"%Y-%m-%dT%H:%M:%SZ"), ${type}, ${message}")
 		lHostName="$(scutil --get LocalHostName)"
 
 		for i in "${LOGS[@]}" ; do
-			echo "	${i}"  >> "${lHostName}-$(date +%H:%M:%S)-LOG.csv"
+			echo "	${i}"  >> "${lHostName}-$(date +"%Y-%m-%dT%H:%M:%SZ")-LOG.csv"
 		done
 	fi
 }
@@ -136,7 +136,7 @@ function create_main_html {
 	<body>
 
 	<h1 class="pagetitle" style="padding-top: 100px">${hostname} - Analysis Report</h1>
-	<h2>$(date)</h2>
+	<h2>$(date -u +"%Y-%m-%dT%H:%M:%SZ")    (All dates and times are UTC throughout)</h2>
 
 	<div class="pagebreak"></div>
 
@@ -219,7 +219,7 @@ function create_secondary_html {
 	<body>
 
 	<h1 class="pagetitle" style="padding-top: 100px">${hostname} - ${title} Analysis Report</h1>
-	<h2>$(date)</h2>
+	<h2>$(date -u +"%Y-%m-%dT%H:%M:%SZ")</h2>
 
 	<div class="pagebreak"></div>
 EOF
@@ -606,7 +606,7 @@ EOF
 					if ! [[ "$prevID" -eq "$id" ]] ; then					
 						time=$(echo "${line}" | awk -F " " ' { print $3 } ' | cut -f1 -d".")
 						time=$((time+978307200))
-						date=$(date -r "${time}" '+%d/%m/%Y:%H:%M:%S')
+						date=$(date -r "${time}" +"%Y-%m-%dT%H:%M:%SZ")
 						url=$(echo "${line}" | awk -F " " ' { print $2 } ')
 
 						echo "<tr><td>${id}</td><td>${date}</td><td>${url}</td></tr>" >> "${reportDirectory}/Browser History.html"
@@ -675,7 +675,7 @@ EOF
 					if ! [[ "${prevID}" -eq "${id}" ]] || [[ "${id}" == "\n" ]] ; then					
 						time=$(echo "${line}" | awk -F "|" ' { print $3 } ' | cut -f1 -d".")
 						time=$(((time/1000000)-11644473600))
-						date=$(date -r "${time}" '+%d/%m/%Y:%H:%M:%S')
+						date=$(date -r "${time}" +"%Y-%m-%dT%H:%M:%SZ")
 						url=$(echo "${line}" | awk -F "|" ' { print $2 } ')
 
 						echo "<tr><td>${id}</td><td>${date}</td><td>${url}</td></tr>" >> "${reportDirectory}/Browser History.html"
@@ -705,7 +705,7 @@ EOF
 
 				tempLine=$(echo "${line}" | awk -F '|' ' { print $1} ')
 				time=$((time/1000000))
-				date=$(date -r "${time}" '+%d/%m/%Y:%H:%M:%S')
+				date=$(date -r "${time}" +"%Y-%m-%dT%H:%M:%SZ")
 				if [ -n "${tempLine}" ] ; then
 					echo "<tr><td>Download Date</td></tr>"  >> "${reportDirectory}/${hostname}.html" 
 					echo "<tr><td>${date}</td></tr>" >> "${reportDirectory}/${hostname}.html" 
@@ -737,7 +737,7 @@ EOF
 						id=$(echo "${line}" | awk -F "|" ' { print $1 } ')
 						time=$(echo "${line}" | awk -F "|" ' { print $2 } ')
 						time=$((time/1000000))
-						date=$(date -r "${time}" '+%d/%m/%Y:%H:%M:%S')
+						date=$(date -r "${time}" +"%Y-%m-%dT%H:%M:%SZ")
 						url=$(echo "${line}" | awk -F "|" ' { print $3 } ')
 
 						echo "<tr><td>${id}</td><td>${date}</td><td>${url}</td></tr>" >> "${reportDirectory}/Browser History.html"
@@ -1114,7 +1114,7 @@ EOF
 
 							if [[ ${tmp} =~ ^[0-9]+$ ]] ; then
 								
-								cmdDate=$(date -r "${tmp}" '+%d/%m/%Y:%H:%M:%S')
+								cmdDate=$(date -r "${tmp}" +"%Y-%m-%dT%H:%M:%SZ")
 								command=$(echo "${line}" | cut -d ';' -f 2 | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g')
 
 								{
@@ -1168,7 +1168,7 @@ EOF
 
 							if [[ ${tmp} =~ ^[0-9]+$ ]] ; then
 								
-								cmdDate=$(date -r "${tmp}" '+%d/%m/%Y:%H:%M:%S')
+								cmdDate=$(date -r "${tmp}" +"%Y-%m-%dT%H:%M:%SZ")
 								command=$(echo "${line}" | cut -d ';' -f 2 | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g')
 
 								if echo "${command}" | grep -c 'sudo'  >> /dev/null ; then
