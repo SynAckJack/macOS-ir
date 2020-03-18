@@ -11,6 +11,8 @@ NC=$(echo -en '\033[0m')
 INFO=$(echo -en '\033[01;35m')
 WARN=$(echo -en '\033[1;33m')
 
+SKIP=false
+
 IFS=$'\n'
 
 function usage {
@@ -30,6 +32,8 @@ function usage {
 	echo -e "    -h    - Show this message\\n"
 
 	echo -e "  collect:\\n"
+	echo -e "    -s    - Skip reading permissions of files and generating hashes."
+	echo -e "	    Reduces overall execution time.\\n"
 	echo -e "    -u    - Copy extracted data to provided USB drive. "
 	echo -e "	    Provided USB will be erased.\\n"
 	echo -e "    -d    - Copy extracted data to a disk image. "
@@ -47,6 +51,14 @@ function usage {
 	echo -e "    -i    - Install analysis tools. "
 	echo -e "	    Installs XCode Tools and a range of other tools that are "
 	echo -e "	    required for analysis (using Homebrew).\\n"
+
+	echo -e "  Example: "
+	echo -e "  Collect and transmit using nc to localhost port 5555:"
+	echo -e "	    ./macos-ir collect -n 127.0.0.1:5555\\n"
+	echo -e "  Receive data using nc:"
+	echo -e "	    ./macos-ir analysis -n 5555\\n"
+	echo -e "  Collect, skipping file hashes, and store on usb:"
+	echo -e "	    ./macos-ir collect -s -u myUSB\\n"
 	
 }
 
@@ -94,6 +106,11 @@ function main {
 		collect ) 
 			shift
 
+			if [[ ${1} == "-s" ]] ; then
+				SKIP="true"
+				shift
+			fi
+
 			while getopts ":hdnu" opt; do
 				case ${opt} in
 					h ) usage
@@ -101,10 +118,11 @@ function main {
 
 					d ) echo "collect disk" 
 						echo "${WARN}[!]${NC} Sudo permissions required..."
-						sudo ./collect.sh -d
+						sudo ./collect.sh -d "${SKIP}"
 						;;
 
 					n ) local ipPort=${2:-"none"}; 
+						
 						if ! [ "${ipPort}" == "none" ] ; then
 
 							ip=$(echo "${ipPort}" | awk -F ":" ' { print $1 } ')
@@ -117,7 +135,7 @@ function main {
 							if [[ ${ipArray[0]} -le 255 ]] &&  [[ ${ipArray[1]} -le 255 ]] && [[ ${ipArray[2]} -le 255 ]] && [[ ${ipArray[3]} -le 255 ]] && [[ ${port} -le 65365 ]]; then
 
 								echo "${WARN}[!]${NC} Sudo permissions required..."
-								sudo ./collect.sh -n "${ipPort}"
+								sudo ./collect.sh -n "${ipPort}" "${SKIP}"
 							else
 								echo "${FAIL}[-]${NC} Please provide a valid IP address and port. Exiting..."
 								exit 1
@@ -134,7 +152,7 @@ function main {
 
 							if [[ -e /Volumes/"${disk}" ]] ; then
 								echo "${WARN}[!]${NC} Sudo permissions required..."
-								sudo ./collect.sh -u "${disk}"
+								sudo ./collect.sh -u "${disk}" "${SKIP}"
 							else
 								echo "${FAIL}[-]${NC} Provided disk does not exist. Exiting..."
 								exit 1
