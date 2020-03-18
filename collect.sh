@@ -140,22 +140,27 @@ function cFiles {
 	echo -e "\nGathering permissions and hash of user files"
 	echo "-------------------------------------------------------------------------------"
 
-	for user in "${USERS[@]}" ; do
+	if [ "${SKIP}" == "false" ] ; then
 
-		if ! [[ "${user}" == "root" || "${user}" ==  "nobody" || "${user}" == "daemon" ]] ; then
-			mkdir -p "Files/${user}"
-			find "/Users/${user}" ! -path "/Users/${user}/Library/*" -type f -exec stat -n -t "%d/%m/%y %R" -f "%Sp |  %Sa | %SB | " {} \; -exec shasum -a 256 {}  \; >> "Files/${user}/${user}-files.txt"
+		for user in "${USERS[@]}" ; do
+
+			if ! [[ "${user}" == "root" || "${user}" ==  "nobody" || "${user}" == "daemon" ]] ; then
+				mkdir -p "Files/${user}"
+				find "/Users/${user}" ! -path "/Users/${user}/Library/*" -type f -exec stat -n -t "%d/%m/%y %R" -f "%Sp |  %Sa | %SB | " {} \; -exec shasum -a 256 {}  \; >> "Files/${user}/${user}-files.txt"
+			fi
+			
+		done
+
+		echo -e "\nGathering .fsventsd Folder"
+		echo "-------------------------------------------------------------------------------"
+
+		mkdir "FSEvents"
+
+		if ! sudo cp -r /.fseventsd/ FSEvents/ ; then
+			echo "${WARN}[!]${NC} Couldn't copy fseventsd folder..." 
 		fi
-		
-	done
-
-	echo -e "\nGathering .fsventsd Folder"
-	echo "-------------------------------------------------------------------------------"
-
-	mkdir "FSEvents"
-
-	if ! sudo cp -r /.fseventsd/ FSEvents/ ; then
-		echo "${WARN}[!]${NC} Couldn't copy fseventsd folder..." 
+	else
+		echo "SKIP set. Skipping...."
 	fi
 		
 }
@@ -548,22 +553,6 @@ function network {
 		ip=$(echo "${ipPort}" | awk -F ":" ' { print $1 } ')
 		port=$(echo "${ipPort}" | awk -F ":" ' { print $2 } ')
 
-		IFS="."
-
-		read -r -a ipArray <<< "$ip"
-
-		if [[ ${ipArray[0]} -le 255 ]] &&  [[ ${ipArray[1]} -le 255 ]] && [[ ${ipArray[2]} -le 255 ]] && [[ ${ipArray[3]} -le 255 ]]; then
-			echo "YAY2"
-			log "INFO" "IP Address valid"
-		else
-			echo "${FAIL}[-]${NC} Please provide a valid IP address and port. Exiting..."
-
-			log "ERROR" "IP Address not valid"
-			exit 1
-		fi
-
-		IFS=$'\n'
-
 		directory="$HOME/$(head -c24 < /dev/urandom | base64 | tr -cd '[:alnum:]')"
 
 		echo "${INFO}[*]${NC} Creating temporary directory at ${directory}"
@@ -630,7 +619,7 @@ function network {
 	fi
 }
 
-function checkSudo {
+function check_sudo {
 	log "INFO" "Checking sudo permissions"
 
 	echo "${INFO}[*]${NC} Checking sudo permissions..."
@@ -653,17 +642,19 @@ function checkSudo {
 
 function main {
 
-	checkSudo
+	check_sudo
+
+	SKIP="false"
 
 	while getopts ":hdnu" opt; do
 		case ${opt} in
-			h ) cLaunch
+			h ) usage
 				;;
-			d ) disk 
+			d ) SKIP=${1:-"false"}; disk; 
 				;;
-			n ) local ip=${2:-"none"}; network "${ip}"
+			n ) local ip=${2:-"none"}; SKIP=${3:-"false"}; network "${ip}"
 				;;
-			u ) local disk=${2:-"none"}; usb "${disk}"
+			u ) local disk=${2:-"none"}; SKIP=${3:-"false"}; usb "${disk}"
 				;;
 			* ) usage
 				;;
