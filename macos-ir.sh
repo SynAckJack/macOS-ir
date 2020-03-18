@@ -50,7 +50,140 @@ function install_tools {
 }
 
 function main {
-	true
+	
+	var=${1:-"usage"}
+
+	case "${var}" in
+		collect ) 
+			shift
+
+			while getopts ":hdnu" opt; do
+				case ${opt} in
+					h ) usage
+						;;
+
+					d ) echo "collect disk" 
+						echo "${WARN}[!]${NC} Sudo permissions required..."
+						sudo ./collect.sh -d
+						;;
+
+					n ) local ipPort=${2:-"none"}; 
+						if ! [ "${ipPort}" == "none" ] ; then
+
+							ip=$(echo "${ipPort}" | awk -F ":" ' { print $1 } ')
+							port=$(echo "${ipPort}" | awk -F ":" ' { print $2 } ')
+
+							IFS="."
+
+							read -r -a ipArray <<< "$ip"
+
+							if [[ ${ipArray[0]} -le 255 ]] &&  [[ ${ipArray[1]} -le 255 ]] && [[ ${ipArray[2]} -le 255 ]] && [[ ${ipArray[3]} -le 255 ]] && [[ ${port} -le 65365 ]]; then
+
+								echo "${WARN}[!]${NC} Sudo permissions required..."
+								sudo ./collect.sh -n "${ipPort}"
+							else
+								echo "${FAIL}[-]${NC} Please provide a valid IP address and port. Exiting..."
+								exit 1
+							fi
+						else 
+							echo "${FAIL}[-]${NC} Please provide a disk name. Exiting..."
+							exit 1
+						fi
+						;;
+
+					u ) local disk=${2:-"none"};
+
+						if ! [ "${disk}" == "none" ] ; then
+
+							if [[ -e /Volumes/"${disk}" ]] ; then
+								echo "${WARN}[!]${NC} Sudo permissions required..."
+								sudo ./collect.sh -u "${disk}"
+							else
+								echo "${FAIL}[-]${NC} Provided disk does not exist. Exiting..."
+								exit 1
+							fi
+						else 
+							echo "${FAIL}[-]${NC} Please provide a disk name. Exiting..."
+							exit 1
+						fi
+						;;
+
+					\?) echo "Invalid option -- $OPTARG "
+						usage
+						;;
+
+					* ) usage
+						;;
+				esac
+			done
+			;;
+
+		analysis ) 
+			shift 
+
+			while getopts ":hdnui" opt; do
+				case ${opt} in
+					h ) usage
+						;;
+					d ) local diskImage=${2:-"none"};
+
+						if ! [ "${diskImage}" == "none" ] ; then
+							install_tools
+							echo "${WARN}[!]${NC} Sudo permissions required..."
+							sudo ./analysis -d "${diskImage}"
+						else
+							echo "${FAIL}[-]${NC} Please provide a disk name. Exiting..."
+						fi
+						;;
+
+					n ) local port=${2:-"none"};
+
+						if ! [ "${port}" == "none" ] ; then
+							install_tools
+							echo "${WARN}[!]${NC} Sudo permissions required..."
+							sudo ./analysis.sh -n "${port}"
+						else
+							echo "${FAIL}[-]${NC} Please provide a port. Exiting..."
+						fi
+						;;
+
+					u ) local disk=${2:-"none"};
+
+						if ! [ "${disk}" == "none" ] ; then
+
+							if [[ -e /Volumes/"${disk}" ]] ; then
+								install_tools
+								echo "${WARN}[!]${NC} Sudo permissions required..."
+								sudo ./analysis.sh -u "${disk}"
+							else
+								echo "${FAIL}[-]${NC} Provided disk does not exist. Exiting..."
+								exit 1
+							fi
+						else 
+							echo "${FAIL}[-]${NC} Please provide a disk name. Exiting..."
+							exit 1
+						fi
+						;;
+
+					i ) install_tools
+						;;
+
+					\?) echo "Invalid option -- $OPTARG "
+						usage
+						;;
+
+					* ) usage
+						;;
+				esac
+			done 
+			;;
+
+		tools ) install_tools
+			;;
+
+		* ) usage
+			;;
+	esac
 }
 
 main "$@"
