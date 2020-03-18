@@ -13,6 +13,43 @@ WARN=$(echo -en '\033[1;33m')
 
 IFS=$'\n'
 
+function usage {
+	
+	echo -e "                           ____  _____       ________  "
+	echo -e "     ____ ___  ____ ______/ __ \/ ___/      /  _/ __ \ "
+	echo -e "    / __ \`__ \/ __ \`/ ___/ / / /\__ \______ / // /_/ / "
+	echo -e "   / / / / / / /_/ / /__/ /_/ /___/ /_____// // _, _/ "
+	echo -e "  /_/ /_/ /_/\__,_/\___/\____//____/     /___/_/ |_|  \\n"
+
+	echo -e "  Collect or analyse data from a macOS system. For use during "
+	echo -e "  Incident Respose. Generates PDF's after analysis to assist with "
+	echo -e "  identifying a threat.\\n"
+
+	echo -e "  usage: ./macos-ir.sh [-h | collect | analysis] [-options]\\n"
+
+	echo -e "    -h    - Show this message\\n"
+
+	echo -e "  collect:\\n"
+	echo -e "    -u    - Copy extracted data to provided USB drive. "
+	echo -e "	    Provided USB will be erased.\\n"
+	echo -e "    -d    - Copy extracted data to a disk image. "
+	echo -e "	    Disk image generated and encrypted using APFS\\n"
+	echo -e "    -n    - Transfer collected data to another device using nc. "
+	echo -e "	    Takes IP and port in format IP Address:Port\\n\\n"
+
+	echo -e "  analysis:\\n"
+	echo -e "    -u    - Analyse data stored on an external drive. "
+	echo -e "	    Provide only USB name.\\n"
+	echo -e "    -d    - Analyse data stored on a disk image."
+	echo -e "	    Provide only disk image path.\\n"
+	echo -e "    -n    - Receive collected data from nc. "
+	echo -e "	    Takes only listening port.\\n"
+	echo -e "    -i    - Install analysis tools. "
+	echo -e "	    Installs XCode Tools and a range of other tools that are "
+	echo -e "	    required for analysis (using Homebrew).\\n"
+	
+}
+
 function install_tools {
 
 	echo -e "\n${INFO}[*]${NC} Installing XCode Tools"
