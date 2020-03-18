@@ -16,21 +16,6 @@ WARN=$(echo -en '\033[1;33m')
 declare -a LOGS
 declare -a USERS
 
-function usage {
-	cat << EOF
-sudo ./collect.sh [-u | -n | -d | -h] [USB Name | IP Address:Port]
-Usage:
-	-u		- Copy extracted data to provided USB drive. ** NOTE: DRIVE WILL BE ERASED **
-	-d		- Copy extracted data to a disk image. ** NOTE: This disk image will be created using APFS and encrypted **
-	-n		- Transfer collected data to another device using nc. Takes IP and Port in format <IP ADDRESS>:<PORT>
-	-h		- Show this message
-
-** NOTE: For collection to access all files, 'Full Disk Access' needs to be given to Terminal.app. If not, some data will be missing **
-	
-EOF
-		exit 0
-}
-
 function log {
 	
 	local type
@@ -39,13 +24,13 @@ function log {
 	type=$1
 	message=$2
 	if [[ ! ${type} == "FINISHED" ]] ; then
-		LOGS+=("$(date +%H:%M:%S), ${type}, ${message}")
+		LOGS+=("$(date +"%Y-%m-%dT%H:%M:%SZ"), ${type}, ${message}")
 	else
-		LOGS+=("$(date +%H:%M:%S), ${type}, ${message}")
+		LOGS+=("$(date +"%Y-%m-%dT%H:%M:%SZ"), ${type}, ${message}")
 		lHostName="$(scutil --get LocalHostName)"
 
 		for i in "${LOGS[@]}" ; do
-			echo "	${i}"  >> "${lHostName}-$(date +%H:%M:%S)-LOG.csv"
+			echo "	${i}"  >> "${lHostName}-$(date +"%Y-%m-%dT%H:%M:%SZ")-LOG.csv"
 		done
 	fi
 }
