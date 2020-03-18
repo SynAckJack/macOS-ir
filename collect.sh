@@ -435,7 +435,7 @@ function disk {
 
 			lHostName="$(scutil --get LocalHostName)"
 
-			collect
+			collect "${SKIP}"
 
 			echo "${INFO}[*]${NC} Collected data. Creating disk image..."
 			log "INFO" "Creating disk image"
@@ -501,7 +501,7 @@ function usb {
 				log "INFO" "USB prepared. Passphrase: ${passphrase}"
 				#COLLECT
 
-				collect 
+				collect "${SKIP}" 
 				
 				echo "${INFO}[*]${NC} Performing shasum of files..."
 				log "INFO" "Shasum started"
@@ -569,7 +569,7 @@ function network {
 
 		# COLLECTION
 
-		collect
+		collect "${SKIP}"
 
 		# Compress files
 		echo "${INFO}[*]${NC} Performing Shasum of files..."
