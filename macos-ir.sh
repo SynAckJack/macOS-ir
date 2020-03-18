@@ -13,6 +13,42 @@ WARN=$(echo -en '\033[1;33m')
 
 IFS=$'\n'
 
+function install_tools {
+
+	echo -e "\n${INFO}[*]${NC} Installing XCode Tools"
+	echo "-------------------------------------------------------------------------------"
+
+	if xcode-select --install  2> /dev/null | grep -q 'install requested'; then
+		echo "XCode Tools must be installed. Please follow the opened dialog and then re-run on completion."
+		exit 1
+	fi
+
+	if ! [[ "$(command -v brew)" > /dev/null ]] ; then
+
+		echo -e "\n${INFO}[*]${NC} Installing Homebrew"
+		echo "-------------------------------------------------------------------------------"
+		if ! /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" ; then
+
+			echo "${FAIL}[-]${NC} Failed to install Homebrew..."
+			exit 1
+		fi
+	fi
+
+	echo -e "\n${INFO}[*]${NC} Installing Tools Using Homebrew"
+	echo "-------------------------------------------------------------------------------"
+
+	echo "Updating Homebrew..."
+	brew update >> /dev/null
+
+	echo "Upgrading Homebrew..."
+	brew upgrade >> /dev/null
+
+	echo "Installing tools using brewfile..."
+	brew bundle --file Brewfile
+
+
+}
+
 function main {
 	true
 }
