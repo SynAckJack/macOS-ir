@@ -86,13 +86,10 @@ function install_tools {
 	echo -e "\n${INFO}[*]${NC} Installing Tools Using Homebrew"
 	echo "-------------------------------------------------------------------------------"
 
-	echo "Updating Homebrew..."
 	brew update >> /dev/null
 
-	echo "Upgrading Homebrew..."
 	brew upgrade >> /dev/null
 
-	echo "Installing tools using brewfile..."
 	brew bundle --file Brewfile
 
 
