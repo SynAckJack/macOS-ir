@@ -32,7 +32,6 @@ function log {
 	fi
 }
 
-
 function check_hash {
 
 	echo -e "\n${INFO}[*]${NC} Checking shasum of files"
@@ -238,9 +237,9 @@ function analyse_sysinfo {
 	dMacOSVersion="${LINES[2]}"
 	dKernelVersion="${LINES[3]}"
 	dUptime="${LINES[4]}"
+	dSerialNumber="${LINES[5]}"
 
-
-cat << EOF > "${reportDirectory}/${hostname}.html"
+cat << EOF >> "${reportDirectory}/${hostname}.html"
 	<h1 id="systeminformation">System Information</h1>
 	<br>
 		<table>
@@ -263,6 +262,10 @@ cat << EOF > "${reportDirectory}/${hostname}.html"
 		  <tr>
 		    <td>Uptime: </td>
 		    <td>${dUptime}</td> 
+		  </tr>
+		  <tr>
+		    <td>Serial Number: </td>
+		    <td>${dSerialNumber}</td> 
 		  </tr>
 		</table>
 
