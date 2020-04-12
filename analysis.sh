@@ -291,8 +291,34 @@ function analyse_security {
 	dStealthFirewall="${LINES[4]}"
 	dXProtect="${LINES[5]}"
 	dUpdateStatus="${LINES[7]}"
+	dFileVault="${LINES[8]}"
+	dFirmwarePassword="${LINES[9]}"
 
-cat << EOF > "${reportDirectory}/${hostname}.html"
+	if [[ "${dSIP}" == " disabled" ]] ; then
+		dSIP="<u> DISABLED</u>"
+	fi
+
+	if [[ "${dEFI}" == " failed" ]] ; then
+		dEFI="<u> FAILED</u>"
+	fi
+
+	if [[ "${dFirewall}" == " disabled" ]] ; then
+		dFirewall="<u> DISABLED</u>"
+	fi
+
+	if [[ "${dStealthFirewall}" == " disabled" ]] ; then
+		dStealthFirewall="<u> DISABLED</u>"
+	fi
+
+	if [[ "${dUpdateStatus}" == " Update Available" ]] ; then
+		dUpdateStatus="<u> UPDATE AVAILABLE</u>"
+	fi
+
+	if [[ "${dFileVault}" == " disabled" ]] ; then
+		dFileVault="<u> DISABLED</u>"
+	fi
+
+	cat << EOF >> "${reportDirectory}/${hostname}.html"
 
 	<h1 id="securityinformation">Security Information</h1>
 	<br>
@@ -324,6 +350,14 @@ cat << EOF > "${reportDirectory}/${hostname}.html"
 		  <tr>
 		    <td>Update Status: </td>
 		    <td>${dUpdateStatus}</td> 
+		  </tr>
+		  <tr>
+		    <td>FileVault Status: </td>
+		    <td>${dFileVault}</td> 
+		  </tr>
+		  <tr>
+		    <td>Firmware Password: </td>
+		    <td>${dFirmwarePassword}</td> 
 		  </tr>
 		</table>
 	<br><br><br>
