@@ -37,8 +37,8 @@ function log {
 
 function cBrowsers {
 
-	mkdir "Browsers"
-
+	mkdir -p "Browsers"
+		
 	echo -e "\nGathering browser data"
 	echo "-------------------------------------------------------------------------------"
 
@@ -93,7 +93,6 @@ function cLaunch {
 		if  [[ -f /usr/lib/cron/tabs/"${user}" ]] ; then
 			mkdir -p "${tempDirectory}/${user}"
 
-			#shellcheck disable=SC2024
 			if sudo cat /usr/lib/cron/tabs/"${user}" >> "${tempDirectory}/${user}"/cron.txt ; then
 				log "INFO" "cron: ${user} copied."
 			else
@@ -105,6 +104,7 @@ function cLaunch {
 
 	done < <(dscl . list /Users | grep -v '_')
 
+	
 	echo -e "\nGathering Launch Agents and Daemons"
 	echo "-------------------------------------------------------------------------------"
 
@@ -131,7 +131,6 @@ function cLaunch {
 	done
 
 	set -e
-
 }
 
 
@@ -163,6 +162,7 @@ function cFiles {
 		echo "SKIP set. Skipping...."
 	fi
 		
+	
 }
 
 function cSysdiagnose {
@@ -194,6 +194,7 @@ function cUser {
 
 		find "${homeDir}" -name ".*" -exec cp {} User/"${users}" \; 2> /dev/null
 
+		# Currently this needs to be run without sudo...
 		if [[ -f "${homeDir}".zsh_history ]] ; then
 			history -En > User/"${users}"/zsh_history
 		fi
@@ -205,18 +206,20 @@ function cUser {
 	echo -e "\nGathering login history"
 	echo "-------------------------------------------------------------------------------"
 	
-	echo -e "\n-- last: \n$(last)" >> User/last.txt
+	echo -e "\n$(last)" >> User/last.txt
 
 	echo -e "\nGathering sudo users"
 	echo "-------------------------------------------------------------------------------"
 	cp /etc/sudoers User/
-
+	
 
 }
 
 function cApplication {
 
 	declare -a APPLICATIONS
+
+	#CHECK SIGNING STATUS OF APPS
 
 	if ! mkdir "Applications" ; then
 		echo "${FAIL}[-]${NC} Couldn't make disk directory. Exiting..."
@@ -311,6 +314,7 @@ function cSecurity {
 		status="disabled"
 	fi
 
+
 	echo " - macOS Firewall: ${status}" >> security.txt
 
 	if [[ "$(defaults read /Library/Preferences/com.apple.alf stealthenabled)" -ge 1 ]] ; then
@@ -336,6 +340,22 @@ function cSecurity {
 
 	echo " - macOS update status: ${status}" >> security.txt
 
+	if fdesetup status | grep "On" > /dev/null ; then
+		status="enabled"
+	else
+		status="disabled"
+	fi
+
+	echo " - Filevault: ${status}" >> security.txt
+
+	if sudo firmwarepasswd -check | grep -q 'Yes' ; then
+		status="enabled"
+	else
+		status="disabled"
+	fi
+
+	echo " - Firmware Password: ${status}" >> security.txt
+
 }
 
 function cSystemInfo {
@@ -348,17 +368,13 @@ function cSystemInfo {
 		echo -e "\nHostname: \t$(hostname)"
 		echo -e "\nSoftware Version: \t$(sw_vers -productVersion)"
 		echo -e "\nKernel Info: \t$(uname -a)"
-		echo -e "\nSystem Uptime: \t$(uptime)" 
+		echo -e "\nSystem Uptime: \t$(uptime)"
+		echo -e "\nSerial Number: \t$(system_profiler SPHardwareDataType | grep "Serial Number" | awk -F ':' ' { print $NF } ')" 
 	} >> systeminfo.txt
 
 }
 
 function cNetworkInfo {
-
-	if ! mkdir "network" ; then
-		echo "${FAIL}[-]${NC} Couldn't make network directory. Exiting..."
-		exit 1
-	fi
 
 	echo -e "\nGathering network info"
 	echo "-------------------------------------------------------------------------------"
@@ -377,11 +393,11 @@ function cDiskInfo {
 	echo -e "\nGathering disk info"
 	echo "-------------------------------------------------------------------------------"
 	echo -e "\n$(diskutil list)" >> disk/diskutil.txt
-	echo -e "\n$(df -h)" >> disk/df.txtc
+	echo -e "\n$(df -h)" >> disk/df.txt
 }
 
 function collect {
-	
+
 	local lHostName
 	
 	echo "${INFO}[*]${NC} Started collection...Writing to collect.log"
@@ -435,7 +451,7 @@ function disk {
 
 			lHostName="$(scutil --get LocalHostName)"
 
-			collect "${SKIP}"
+			collect
 
 			echo "${INFO}[*]${NC} Collected data. Creating disk image..."
 			log "INFO" "Creating disk image"
@@ -462,7 +478,6 @@ function disk {
 			if echo -n "${passphrase}" | hdiutil create -fs apfs -size "${dirSize}"kb -format UDRW -stdinpass -encryption AES-128 -srcfolder "${directory}" "${directory}/output".dmg  ; then
 				echo "${PASS}[+]${NC} Succesfully created disk image with data at ${directory}/output.dmg."
 				log "PASS" "Disk image created. Directory: ${directory}, Passphrase: ${passphrase}"
-
 				echo "${INFO}[*]${NC} Passphrase for image: ${passphrase}"
 			else
 				echo "${FAIL}[-]${NC} Failed to create disk image. Exiting..."
@@ -501,8 +516,8 @@ function usb {
 				log "INFO" "USB prepared. Passphrase: ${passphrase}"
 				#COLLECT
 
-				collect "${SKIP}" 
-				
+				collect "${SKIP}"
+
 				echo "${INFO}[*]${NC} Performing shasum of files..."
 				log "INFO" "Shasum started"
 
@@ -548,10 +563,26 @@ function network {
 
 	echo "${INFO}[*]${NC} Checking IP Address..."
 
-	if [ ! "${ip}" == "none" ] && [[ "${ip}" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\:[0-9]{1,5}$ ]] ; then
+
+	if [ ! "${ipPort}" == "none" ] && [[ "${ipPort}" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\:[0-9]{1,5}$ ]] ; then
 
 		ip=$(echo "${ipPort}" | awk -F ":" ' { print $1 } ')
 		port=$(echo "${ipPort}" | awk -F ":" ' { print $2 } ')
+		# IFS="."
+
+		# read -r -a ipArray <<< "$ip"
+
+		# if [[ ${ipArray[0]} -le 255 ]] &&  [[ ${ipArray[1]} -le 255 ]] && [[ ${ipArray[2]} -le 255 ]] && [[ ${ipArray[3]} -le 255 ]]; then
+		# 	echo "YAY2"
+		# 	log "INFO" "IP Address valid"
+		# else
+		# 	echo "${FAIL}[-]${NC} Please provide a valid IP address and port. Exiting..."
+
+		# 	log "ERROR" "IP Address not valid"
+		# 	exit 1
+		# fi
+
+		IFS=$'\n'
 
 		directory="$HOME/$(head -c24 < /dev/urandom | base64 | tr -cd '[:alnum:]')"
 
@@ -560,7 +591,6 @@ function network {
 	
 		if ! [[ -d "${directory}" ]] ; then
 			mkdir "${directory}" && cd "${directory}"
-			echo "BAM $PWD"
 		else
 			echo "${FAIL}[-]${NC} Failed to create directory. Exiting..."
 			log "ERROR" "Couldn't create directory ${directory}"
@@ -569,7 +599,7 @@ function network {
 
 		# COLLECTION
 
-		collect "${SKIP}"
+		collect
 
 		# Compress files
 		echo "${INFO}[*]${NC} Performing Shasum of files..."
@@ -631,15 +661,6 @@ function check_sudo {
 
 }
 
-# function checkXCode {
-
-# 	if ! xcode-select --install 2>&1 | grep -c 'already installed'  >> /dev/null; then
-# 		echo "${WARN}[!]${NC} XCode Tools must be installed. Please follow the prompt to install and then run again."
-# 		exit 1
-# 	fi
-
-# }
-
 function main {
 
 	check_sudo
@@ -662,7 +683,7 @@ function main {
 	done
 
 
-	log "FINISHED" "Successfully completed ✅"
+	log "FINISHED" "Successfully completed ?"
 
 	# Add statement to check the number of arguments and if equal to 1 then call usage.
 }
