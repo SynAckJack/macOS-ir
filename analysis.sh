@@ -371,7 +371,7 @@ function analyse_applications {
 	echo "-------------------------------------------------------------------------------"
 
 
-cat << EOF > "${reportDirectory}/${hostname}.html"
+cat << EOF >> "${reportDirectory}/${hostname}.html"
 
 
 	<h1 id="applicationinformation">Application Information</h1>
@@ -412,7 +412,11 @@ EOF
 				{
 					echo "<tr>"
 					echo "<td>${title}: </td>"
-					echo "<td>${value}</td>"
+					if [[ "${value}" == " Unknown" ]] ; then
+						echo "<td><u>${value}</u></td>"
+					else 
+						echo "<td>${value}</td>"
+					fi
 					echo "</tr>"
 				}  >> "${reportDirectory}/${hostname}.html"
 			fi
@@ -421,8 +425,7 @@ EOF
 
 	done 
 
-	cat << EOF > "${reportDirectory}/${hostname}.html"
-
+	cat << EOF >> "${reportDirectory}/${hostname}.html"
 
 		</table>
 		<br><br><br>
@@ -434,7 +437,7 @@ function analyse_install_history {
 	echo -e "\n${INFO}[*]${NC} Analysing install history"
 	echo "-------------------------------------------------------------------------------"
 
-	cat << EOF > "${reportDirectory}/${hostname}.html"
+	cat << EOF >> "${reportDirectory}/${hostname}.html"
 
 
 	<h1 id="installhistory">Install History</h1>
@@ -503,14 +506,14 @@ function print_signing {
 
 EOF
 
-	if [ -f /Applications/notsigned.txt ] ; then
+	if [ -f Applications/notsigned.txt ] ; then
 
 		echo "<i>Note: The following applications are classed as 'Not Signed'. This can be due to them not being signed or failing the requirements for signing.</i><br><br>" >> "${reportDirectory}/${hostname}.html" 
 		while IFS=$'\n' read -r line ; do
 
 			echo "${line}<br>" >> "${reportDirectory}/${hostname}.html" 
 
-		done < <(cat /Applications/notsigned.txt)
+		done < <(cat Applications/notsigned.txt)
 
 	else
 		echo "All Applications are signed!<br>" >> "${reportDirectory}/${hostname}.html" 
@@ -518,7 +521,7 @@ EOF
 
 	echo "<br><br><i>A list of all Applications and their signing status can be found in 'Application Signing Status.pdf'.</i><br>" >> "${reportDirectory}/${hostname}.html"
 
-	if [ -f /Applications/notsigned.txt ] && [ -f /Applications/signed.txt ] ; then
+	if [ -f Applications/notsigned.txt ] && [ -f Applications/signed.txt ] ; then
 	
 		create_secondary_html "Application Signing Status"
 
@@ -533,7 +536,7 @@ EOF
 
 				echo "${line}<br>" >> "${reportDirectory}/Application Signing Status.html"
 
-			done < <(cat /Applications/notarized.txt)
+			done < <(cat Applications/notarized.txt)
 
 		fi
 
@@ -547,7 +550,7 @@ EOF
 
 			echo "${line}<br>" >> "${reportDirectory}/Application Signing Status.html"
 
-		done < <(cat /Applications/signed.txt)
+		done < <(cat Applications/signed.txt)
 
 		{
 			echo "<br><br><br>"
@@ -560,7 +563,7 @@ EOF
 
 			echo "${line}<br>" >> "${reportDirectory}/Application Signing Status.html"
 
-		done < <(cat /Applications/notsigned.txt)
+		done < <(cat Applications/notsigned.txt)
 	fi
 
 }
