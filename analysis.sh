@@ -240,7 +240,7 @@ function analyse_sysinfo {
 	dUptime="${LINES[4]}"
 
 
-cat << EOF > "${reportDirectory}/${hostname}.html"
+cat << EOF >> "${reportDirectory}/${hostname}.html"
 	<h1 id="systeminformation">System Information</h1>
 	<br>
 		<table>
@@ -289,7 +289,7 @@ function analyse_security {
 	dXProtect="${LINES[5]}"
 	dUpdateStatus="${LINES[7]}"
 
-cat << EOF > "${reportDirectory}/${hostname}.html"
+cat << EOF >> "${reportDirectory}/${hostname}.html"
 
 	<h1 id="securityinformation">Security Information</h1>
 	<br>
@@ -334,7 +334,7 @@ function analyse_applications {
 	echo "-------------------------------------------------------------------------------"
 
 
-cat << EOF > "${reportDirectory}/${hostname}.html"
+cat << EOF >> "${reportDirectory}/${hostname}.html"
 
 
 	<h1 id="applicationinformation">Application Information</h1>
@@ -384,7 +384,7 @@ EOF
 
 	done 
 
-	cat << EOF > "${reportDirectory}/${hostname}.html"
+	cat << EOF >> "${reportDirectory}/${hostname}.html"
 
 
 		</table>
@@ -397,7 +397,7 @@ function analyse_install_history {
 	echo -e "\n${INFO}[*]${NC} Analysing install history"
 	echo "-------------------------------------------------------------------------------"
 
-	cat << EOF > "${reportDirectory}/${hostname}.html"
+	cat << EOF >> "${reportDirectory}/${hostname}.html"
 
 
 	<h1 id="installhistory">Install History</h1>
