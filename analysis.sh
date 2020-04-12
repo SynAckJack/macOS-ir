@@ -239,6 +239,7 @@ function analyse_sysinfo {
 	dUptime="${LINES[4]}"
 	dSerialNumber="${LINES[5]}"
 
+
 cat << EOF >> "${reportDirectory}/${hostname}.html"
 	<h1 id="systeminformation">System Information</h1>
 	<br>
@@ -1397,7 +1398,7 @@ function disk {
 
 	diskName="$1"
 
-	if "${diskName}" == "None" ; then
+	if [[ "${diskName}" == "none" ]] ; then
 		echo "FAIL. Please enter a disk name..."
 		exit 1
 	fi
