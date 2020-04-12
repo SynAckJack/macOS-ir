@@ -1426,43 +1426,6 @@ function control_c {
 	exit 1
 }
 
-function install_tools {
-
-	echo -e "\n${INFO}[*]${NC} Installing XCode Tools"
-	echo "-------------------------------------------------------------------------------"
-
-	if xcode-select --install  2> /dev/null | grep -q 'install requested'; then
-		echo "XCode Tools must be installed. Please follow the opened dialog and then re-run on completion."
-		exit 1
-	else
-		echo "XCode Tools already installed."
-	fi
-
-	echo -e "\n${INFO}[*]${NC} Installing brew"
-	echo "-------------------------------------------------------------------------------"
-	#Install requirements for analysis. This will install XCode Tools alongside others.
-
-	if ! [[ "$(command -v brew)" > /dev/null ]] ; then
-
-		if /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" ; then
-			echo "Homebrew installed!"
-		else
-			echo "Failed to install Homebrew..."
-			exit 1
-		fi
-	fi
-	echo "Homebrew installed!"
-	echo "update"
-	brew update
-
-	echo "upgrade"
-	brew upgrade
-
-	echo "bundle"
-	brew bundle
-	
-}
-
 function analysis {
 
 	trap control_c SIGINT
@@ -1498,8 +1461,6 @@ function analysis {
 }
 
 function main {
-
-	install_tools
 
 	while getopts ":hdnui" opt; do
 		case ${opt} in
