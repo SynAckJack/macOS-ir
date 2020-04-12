@@ -604,15 +604,18 @@ EOF
 
 				tempLine=$(echo "${line}" | awk -F '<date>|</date>' ' { print $2 } ')
 				if [ -n "${tempLine}" ] ; then
-					echo "<tr><td>Download Date</td></tr>"  >> "${reportDirectory}/${hostname}.html" 
-					echo "<tr><td>${tempLine}</td></tr>" >> "${reportDirectory}/${hostname}.html" 
+					echo "<tr><td>Download Date</td></tr>"  >> "${reportDirectory}/${hostname}.html"
+					echo "<tr><td>${tempLine}</td></tr>" >> "${reportDirectory}/${hostname}.html"
 				fi
-				# echo "<tr>" >> "${reportDirectory}/${hostname}.html" |
+				# echo "<tr>" >> "${reportDirectory}/${hostname}.html"|
 
 				tempLine=$(echo "${line}" | awk -F '<string>|</string>' ' { print $2 } ')
 				if [ -n "${tempLine}" ] ; then
-					echo "<tr><td>Download URL</td></tr>"  >> "${reportDirectory}/${hostname}.html" 
-					echo "<tr><td>${tempLine}</td></tr>" >> "${reportDirectory}/${hostname}.html" 
+					{
+						echo "<tr><td>Download URL</td></tr>"
+						echo "<tr><td>${tempLine}</td></tr>"
+						echo "<tr></tr>" 
+					} >> "${reportDirectory}/${hostname}.html"
 				fi
 
 			done < <((grep -A1 -E 'DownloadEntryURL|DownloadEntryDateAddedKey') < /tmp/Downloads.xml)
@@ -680,15 +683,18 @@ EOF
 
 				tempLine=$(echo "${line}" | awk -F ' ' ' { print $1" "$2" "$3" "$4" "$5} ')
 				if [ -n "${tempLine}" ] ; then
-					echo "<tr><td>Download Date</td></tr>"  >> "${reportDirectory}/${hostname}.html" 
-					echo "<tr><td>${tempLine}</td></tr>" >> "${reportDirectory}/${hostname}.html" 
+					echo "<tr><td>Download Date</td></tr>"  >> "${reportDirectory}/${hostname}.html"
+					echo "<tr><td>${tempLine}</td></tr>" >> "${reportDirectory}/${hostname}.html"
 				fi
-				# echo "<tr>" >> "${reportDirectory}/${hostname}.html" |
+				# echo "<tr>" >> "${reportDirectory}/${hostname}.html"|
 
 				tempLine=$(echo "${line}" | awk -F ' ' ' { print $7 } ')
 				if [ -n "${tempLine}" ] ; then
-					echo "<tr><td>Download URL</td></tr>"  >> "${reportDirectory}/${hostname}.html" 
-					echo "<tr><td>${tempLine}</td></tr>" >> "${reportDirectory}/${hostname}.html" 
+					{
+						echo "<tr><td>Download URL</td></tr>"
+						echo "<tr><td>${tempLine}</td></tr>"
+						echo "<tr></tr>" 
+					} >> "${reportDirectory}/${hostname}.html"
 				fi
 
 			done < <((sqlite3 /tmp/History "SELECT last_modified, referrer  FROM downloads;" | sed 's/\|/ /g'))
@@ -745,17 +751,20 @@ EOF
 
 				tempLine=$(echo "${line}" | awk -F '|' ' { print $1} ')
 				time=$((time/1000000))
-				date=$(date -r "${time}" +"%Y-%m-%dT%H:%M:%SZ")
+				date=$(date -r "${time}" +"%Y-%m-%dT%H:%M:%SZ" )
 				if [ -n "${tempLine}" ] ; then
-					echo "<tr><td>Download Date</td></tr>"  >> "${reportDirectory}/${hostname}.html" 
-					echo "<tr><td>${date}</td></tr>" >> "${reportDirectory}/${hostname}.html" 
+					echo "<tr><td>Download Date</td></tr>"  >> "${reportDirectory}/${hostname}.html"
+					echo "<tr><td>${date}</td></tr>" >> "${reportDirectory}/${hostname}.html"
 				fi
-				# echo "<tr>" >> "${reportDirectory}/${hostname}.html" |
+				# echo "<tr>" >> "${reportDirectory}/${hostname}.html"|
 
 				tempLine=$(echo "${line}" | awk -F '|' ' { print $2 } ')
 				if [ -n "${tempLine}" ] ; then
-					echo "<tr><td>Download URL</td></tr>"  >> "${reportDirectory}/${hostname}.html" 
-					echo "<tr><td>${tempLine}</td></tr>" >> "${reportDirectory}/${hostname}.html" 
+					{
+						echo "<tr><td>Download URL</td></tr>"
+						echo "<tr><td>${tempLine}</td></tr>"
+						echo "<tr></tr>" 
+					} >> "${reportDirectory}/${hostname}.html"
 				fi
 
 			done < <((sqlite3 /tmp/places.sqlite "SELECT moz_annos.dateAdded,  moz_places.url FROM moz_places, moz_annos WHERE moz_places.id = moz_annos.place_id AND anno_attribute_id = 1;"))
@@ -822,7 +831,10 @@ function print_files {
 	echo -e "\n${INFO}[*]${NC} Printing File Information"
 	echo "-------------------------------------------------------------------------------"
 
-	cat << EOF > "${reportDirectory}"/files.html
+	if [ -d Files/ ] ; then
+		
+
+	cat << EOF > "${reportDirectory}"/FilesHashes.html
 
 	<!DOCTYPE html>
 
@@ -859,20 +871,20 @@ function print_files {
 EOF
 
 
-	while IFS=$'\n' read -r file ; do
-		
-		while IFS="$" read -r line ; do
+		while IFS=$'\n' read -r file ; do
+			
+			while IFS="$" read -r line ; do
 
-			{
-				echo "${line} " | awk -F '|' ' { print "<tr><td>" $1 "</td><td>" $2 "</td><td>" $3 "</td>" } '
-				temp=$(echo "${line} " | awk -F '|' ' { print $4 } ')
-				echo "${temp}" | awk -F ' /' ' { print "<td>" $1 "</td>"} '
-				echo "${temp}" | awk -F ' /' ' { print "<td>" $2 "</td></tr>"} '
-			}  >> "${reportDirectory}"/files.html
+				{
+					echo "${line} " | awk -F '|' ' { print "<tr><td>" $1 "</td><td>" $2 "</td><td>" $3 "</td>" } '
+					temp=$(echo "${line} " | awk -F '|' ' { print $4 } ')
+					echo "${temp}" | awk -F ' /' ' { print "<td>" $1 "</td>"} '
+					echo "${temp}" | awk -F ' /' ' { print "<td>" $2 "</td></tr>"} '
+				}  >> "${reportDirectory}"/files.html
 
-		done < <(cat -e "$file")
+			done < <(cat -e "$file")
 
-	done < <(find Files -type f -name "*.txt")
+		done < <(find ./Files/ -type f -name "*.txt")
 
 cat << EOF >> "${reportDirectory}"/files.html
 
@@ -880,6 +892,10 @@ cat << EOF >> "${reportDirectory}"/files.html
 		</body>
 	</html>
 EOF
+	else 
+		echo "'Files' directory does not exist. Skipping..."
+			return 0
+	fi
 }
 
 function analyse_cron {
@@ -1047,8 +1063,6 @@ EOF
 
 					echo "</table>"  >> "${reportDirectory}/${hostname}.html" 
 				fi
-
-			
 			fi
 		fi
 	fi
@@ -1154,7 +1168,7 @@ EOF
 
 							if [[ ${tmp} =~ ^[0-9]+$ ]] ; then
 								
-								cmdDate=$(date -r "${tmp}" +"%Y-%m-%dT%H:%M:%SZ")
+								cmdDate=$(date -r "${tmp}" +"%Y-%m-%dT%H:%M:%SZ" )
 								command=$(echo "${line}" | cut -d ';' -f 2 | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g')
 
 								{
@@ -1173,7 +1187,7 @@ EOF
 						echo "</pre><br>" >> "${reportDirectory}/${hostname}.html"
 					fi
 				else
-					#CHECK IF LINE CONTAINS SUDO, IF SO MAKE RED
+
 					if [ -f "${dir}/.bash_history" ] ; then
 
 						if ! [ -f "${reportDirectory}/User Command History.html" ] ; then
@@ -1208,7 +1222,7 @@ EOF
 
 							if [[ ${tmp} =~ ^[0-9]+$ ]] ; then
 								
-								cmdDate=$(date -r "${tmp}" +"%Y-%m-%dT%H:%M:%SZ")
+								cmdDate=$(date -r "${tmp}" +"%Y-%m-%dT%H:%M:%SZ" )
 								command=$(echo "${line}" | cut -d ';' -f 2 | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g')
 
 								if echo "${command}" | grep -c 'sudo'  >> /dev/null ; then
@@ -1466,43 +1480,6 @@ function control_c {
 	exit 1
 }
 
-function install_tools {
-
-	echo -e "\n${INFO}[*]${NC} Installing XCode Tools"
-	echo "-------------------------------------------------------------------------------"
-
-	if xcode-select --install  2> /dev/null | grep -q 'install requested'; then
-		echo "XCode Tools must be installed. Please follow the opened dialog and then re-run on completion."
-		exit 1
-	else
-		echo "XCode Tools already installed."
-	fi
-
-	echo -e "\n${INFO}[*]${NC} Installing brew"
-	echo "-------------------------------------------------------------------------------"
-	#Install requirements for analysis. This will install XCode Tools alongside others.
-
-	if ! [[ "$(command -v brew)" > /dev/null ]] ; then
-
-		if /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" ; then
-			echo "Homebrew installed!"
-		else
-			echo "Failed to install Homebrew..."
-			exit 1
-		fi
-	fi
-	echo "Homebrew installed!"
-	echo "update"
-	brew update
-
-	echo "upgrade"
-	brew upgrade
-
-	echo "bundle"
-	brew bundle
-	
-}
-
 function analysis {
 
 	trap control_c SIGINT
@@ -1539,7 +1516,7 @@ function analysis {
 
 function main {
 
-	install_tools
+	trap control_c SIGINT
 
 	while getopts ":hdnui" opt; do
 		case ${opt} in
