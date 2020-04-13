@@ -946,10 +946,11 @@ EOF
 
 	while IFS=$'\n' read -r path ; do 
 
-		{
-			echo "<b>${path}</b><br>"
+		tempPath=$(cut -d'/' -f 3-) < "${path}"
+		{	
+			echo "<b>${tempPath}</b><br>"
 			echo "<pre>"
-			(sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4) < "${path}"
+			(sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4) < "${tempPath}"
 			echo "</pre>"
 			echo "<br>"
 		} >> "${reportDirectory}/${hostname}.html" 
@@ -1403,7 +1404,7 @@ function disk {
 		exit 1
 	fi
 
-	volume=$(echo "$diskName" | awk -F '/' ' { print $3 }')
+	volume=$(echo "$diskName" | awk -F '/' ' { print $(NF-1) }')
 
 	echo "${INFO}[*]${NC} Checking disk. Please enter the passphrase..."
 	read -rp 'Passphrase: ' passphrase
