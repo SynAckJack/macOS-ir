@@ -292,8 +292,8 @@ function analyse_security {
 	dStealthFirewall="${LINES[4]}"
 	dXProtect="${LINES[5]}"
 	dUpdateStatus="${LINES[7]}"
-	#dFileVault="${LINES[8]}"
-	# dFirmwarePassword="${LINES[9]}"
+	dFileVault="${LINES[8]}"
+	dFirmwarePassword="${LINES[9]}"
 
 	if [[ "${dSIP}" == " disabled" ]] ; then
 		dSIP="<u> DISABLED</u>"
