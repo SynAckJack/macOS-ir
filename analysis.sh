@@ -947,6 +947,7 @@ EOF
 
 	<h1 id="launchagents">Launch Agents</h1>
 	<br>
+	<i>The following contains a list of all Launch Agents for the device. Where the path begins with a username, the full path is /Users/[username]/Library/LaunchAgents/[Launch Agent]. The contents of the Launch Agents can be found in the PDF Launch Agents.pdf </i><br><br>
 
 EOF
 	mkdir -p /tmp/launch/
@@ -955,11 +956,9 @@ EOF
 
 	while IFS=$'\n' read -r path ; do 
 
-		echo "${tempPath}" >> "${reportDirectory}/${hostname}.html"	
-
 		tempPath="$(echo "${path}" | cut -d'/' -f 3-)" 
 
-		echo 
+		echo "${tempPath}<br>" >> "${reportDirectory}/${hostname}.html"	
 
 		{	
 			echo "<b>${tempPath}</b><br>"
