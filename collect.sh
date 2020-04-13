@@ -93,6 +93,7 @@ function cLaunch {
 		if  [[ -f /usr/lib/cron/tabs/"${user}" ]] ; then
 			mkdir -p "${tempDirectory}/${user}"
 
+			#shellcheck disable=SC2024
 			if sudo cat /usr/lib/cron/tabs/"${user}" >> "${tempDirectory}/${user}"/cron.txt ; then
 				log "INFO" "cron: ${user} copied."
 			else
