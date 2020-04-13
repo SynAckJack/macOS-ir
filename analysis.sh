@@ -292,8 +292,8 @@ function analyse_security {
 	dStealthFirewall="${LINES[4]}"
 	dXProtect="${LINES[5]}"
 	dUpdateStatus="${LINES[7]}"
-	dFileVault="${LINES[8]}"
-	dFirmwarePassword="${LINES[9]}"
+	#dFileVault="${LINES[8]}"
+	# dFirmwarePassword="${LINES[9]}"
 
 	if [[ "${dSIP}" == " disabled" ]] ; then
 		dSIP="<u> DISABLED</u>"
@@ -933,6 +933,15 @@ function analyse_launch_agents {
 	echo -e "\n${INFO}[*]${NC} Printing Launch Agents"
 	echo "-------------------------------------------------------------------------------"
 
+	create_secondary_html "Launch Agents"
+	cat << EOF >> "${reportDirectory}/Launch Agents.html"
+
+
+	<h1> Launch Agents </h1>
+	<br>
+
+EOF
+
 	cat << EOF >> "${reportDirectory}/${hostname}.html" 
 
 
@@ -946,16 +955,21 @@ EOF
 
 	while IFS=$'\n' read -r path ; do 
 
-		tempPath=$(cut -d'/' -f 3-) < "${path}"
+		echo "${tempPath}" >> "${reportDirectory}/${hostname}.html"	
+
+		tempPath="$(echo "${path}" | cut -d'/' -f 3-)" 
+
+		echo 
+
 		{	
 			echo "<b>${tempPath}</b><br>"
 			echo "<pre>"
-			(sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4) < "${tempPath}"
+			(sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4) < "${path}"
 			echo "</pre>"
 			echo "<br>"
-		} >> "${reportDirectory}/${hostname}.html" 
+		} >> "${reportDirectory}/Launch Agents.html" 
 
-	done < <(find Launch -name "*.plist" -print)
+	done < <(find Launch -name "*.plist" )
 
 	echo "<br><br><br>"   >> "${reportDirectory}/${hostname}.html" 		
 }
@@ -1335,6 +1349,8 @@ function cleanup {
 	else
 		echo "Completed Cleanup. All done."
 	fi 
+
+	set -u
 }
 
 function decrypt {
