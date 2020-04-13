@@ -1504,7 +1504,7 @@ function analysis {
 	
 	hostname=$(find . -name "*-shasum.txt" -print | cut -d '-' -f 1 | tr -d './')
 
-	reportDirectory="/tmp/Report/${hostname}"
+	reportDirectory="/tmp/Report/${hostname} $(date -u +"%Y-%m-%dT%H-%M-%SZ")"
 
 	check_hash
 
