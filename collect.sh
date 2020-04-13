@@ -126,7 +126,7 @@ function cLaunch {
 	for user in "${USERS[@]}" ; do 
 
 		mkdir -p "${tempDirectory}/${user}"
-		cp "${user}"/Library/LaunchAgents "${tempDirectory}/${user}"/ 2&> /dev/null
+		cp /Users/"${user}"/Library/LaunchAgents/* "${tempDirectory}/${user}" 2>/dev/null
 
 	done
 

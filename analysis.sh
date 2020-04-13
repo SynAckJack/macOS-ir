@@ -1316,6 +1316,7 @@ function cleanup {
 
 	echo -e "\n${INFO}[*]${NC} Performing Cleanup"
 	echo "-------------------------------------------------------------------------------"
+	set +u
 
 	declare -a TMPFAILED
 
