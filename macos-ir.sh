@@ -182,7 +182,7 @@ function main {
 						if ! [ "${diskImage}" == "none" ] ; then
 							install_tools
 							echo "${WARN}[!]${NC} Sudo permissions required..."
-							sudo ./analysis -d "${diskImage}"
+							sudo ./analysis.sh -d "${diskImage}"
 						else
 							echo "${FAIL}[-]${NC} Please provide a disk name. Exiting..."
 						fi
