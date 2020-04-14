@@ -103,9 +103,8 @@ function main {
 		collect ) 
 			shift
 
-			if [[ ${1} == "-s" ]] ; then
+			if [[ "${2:-"false"}" == "-s" ]] ; then
 				SKIP="true"
-				shift
 			fi
 
 			while getopts ":hdnu" opt; do
@@ -113,8 +112,7 @@ function main {
 					h ) usage
 						;;
 
-					d ) echo "collect disk" 
-						echo "${WARN}[!]${NC} Sudo permissions required..."
+					d ) echo "${WARN}[!]${NC} Sudo permissions required..."
 						sudo ./collect.sh -d "${SKIP}"
 						;;
 

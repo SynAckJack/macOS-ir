@@ -666,17 +666,17 @@ function main {
 
 	check_sudo
 
-	SKIP="false"
+	SKIP=${2:-"false"}
 
 	while getopts ":hdnu" opt; do
 		case ${opt} in
 			h ) usage
 				;;
-			d ) SKIP=${1:-"false"}; disk; 
+			d ) disk; 
 				;;
-			n ) local ip=${2:-"none"}; SKIP=${3:-"false"}; network "${ip}"
+			n ) local ip=${2:-"none"}; network "${ip}"
 				;;
-			u ) local disk=${2:-"none"}; SKIP=${3:-"false"}; usb "${disk}"
+			u ) local disk=${2:-"none"}; usb "${disk}"
 				;;
 			* ) usage
 				;;
