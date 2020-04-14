@@ -146,7 +146,7 @@ function cFiles {
 
 			if ! [[ "${user}" == "root" || "${user}" ==  "nobody" || "${user}" == "daemon" ]] ; then
 				mkdir -p "Files/${user}"
-				find "/Users/${user}" ! -path "/Users/${user}/Library/*" -type f -exec stat -n -t "%d/%m/%y %R" -f "%Sp |  %Sa | %SB | " {} \; -exec shasum -a 256 {}  \; >> "Files/${user}/${user}-files.txt"
+				find "/Users/${user}" -type f -exec stat -n -t "%d/%m/%y %R" -f "%Sp |  %Sa | %SB | " {} \; -exec shasum -a 256 {}  \; >> "Files/${user}/${user}-files.txt"
 			fi
 			
 		done
