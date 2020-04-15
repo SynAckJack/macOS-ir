@@ -835,7 +835,7 @@ function print_files {
 	if [ -d Files/ ] ; then
 		
 
-	cat << EOF > "${reportDirectory}"/FilesHashes.html
+	cat << EOF > "${reportDirectory}"/Files.html
 
 	<!DOCTYPE html>
 
@@ -881,13 +881,13 @@ EOF
 					temp=$(echo "${line} " | awk -F '|' ' { print $4 } ')
 					echo "${temp}" | awk -F ' /' ' { print "<td>" $1 "</td>"} '
 					echo "${temp}" | awk -F ' /' ' { print "<td>" $2 "</td></tr>"} '
-				}  >> "${reportDirectory}"/files.html
+				}  >> "${reportDirectory}"/Files.html
 
 			done < <(cat -e "$file")
 
 		done < <(find ./Files/ -type f -name "*.txt")
 
-cat << EOF >> "${reportDirectory}"/files.html
+cat << EOF >> "${reportDirectory}"/Files.html
 
 			</table>
 		</body>
@@ -1479,8 +1479,8 @@ function generate_reports {
 
 	while IFS=$'\n' read -r line; do
 
-		if [[ "${line}" == "files.html" ]] ; then
-			wkhtmltopdf -q -O landscape files.html files.pdf
+		if [[ "${line}" == "Files.html" ]] ; then
+			wkhtmltopdf -q -O landscape Files.html Files.pdf
 		else 
 			wkhtmltopdf -q --print-media-type "${line}" "${line%.html}.pdf"
 		fi
