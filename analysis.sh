@@ -1294,7 +1294,7 @@ function write_sudo_commands {
 				echo "${c}"
 				echo "</pre>"
 			done
-			echo "</pre><br><br>"
+			echo "<br><br>"
 		} >> "${reportDirectory}/${hostname}.html"
 	fi
 	
@@ -1536,7 +1536,7 @@ function analysis {
 
 	cleanup
 
-	open "${reportDirectory}/${hostname}.pdf"
+	open "${reportDirectory}/"
 }
 
 function main {
