@@ -1149,7 +1149,7 @@ EOF
 		{
 			echo "<h1 id='commands'>Command History</h1><br>"
 			echo "<i>The following contains a list of commands ran by the root user. There is also a list of other command run by other users containing 'sudo'.<br>" 
-			echo "A list of all commands run by each user can be found in 'User Command History.pdf'.</i><br><br>"
+			echo "A list of all commands run by each user can be found in 'Command History.pdf'.</i><br><br>"
 		} >> "${reportDirectory}/${hostname}.html"
 
 		for dir in User/*/ ; do
@@ -1166,6 +1166,7 @@ EOF
 							{
 								echo "<pre>"
 								echo "${line}" | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4
+								echo "</pre>"
 							} >> "${reportDirectory}/${hostname}.html"
 
 						done < <(cat "${dir}/.bash_history")
@@ -1188,11 +1189,13 @@ EOF
 								{
 									echo "<pre>"
 									echo "${cmdDate}  --  ${command}"
+									echo "</pre>"
 								} >> "${reportDirectory}/${hostname}.html"
 							else
 								{
 									echo "<pre>"
 									echo "${line}"
+									echo "</pre>"
 								} >> "${reportDirectory}/${hostname}.html"
 
 							fi
@@ -1204,11 +1207,11 @@ EOF
 
 					if [ -f "${dir}/.bash_history" ] ; then
 
-						if ! [ -f "${reportDirectory}/User Command History.html" ] ; then
-							create_secondary_html "User Command History"
+						if ! [ -f "${reportDirectory}/Command History.html" ] ; then
+							create_secondary_html "Command History"
 						fi
 
-						echo "<b> ${user} - Bash History </b> " >> "${reportDirectory}/User Command History.html"
+						echo "<b> ${user} - Bash History </b> " >> "${reportDirectory}/Command History.html"
 						while IFS=$'\n' read -r line ; do 
 
 							if echo "${line}" | grep -c 'sudo' >> /dev/null; then
@@ -1218,18 +1221,19 @@ EOF
 							{
 								echo "<pre>"
 								echo "${line}" | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4
-							} >> "${reportDirectory}/User Command History.html"
+								echo "</pre>"
+							} >> "${reportDirectory}/Command History.html"
 
 						done < <(cat "${dir}/.bash_history")
 
 						write_sudo_commands "${user}" "bash"
 
-						echo "</pre><br>" >> "${reportDirectory}/User Command History.html"
+						echo "</pre><br>" >> "${reportDirectory}/Command History.html"
 					fi
 
 					if [ -f "${dir}/.zsh_history" ] ; then
 
-						echo "<b>${user} - Zsh History </b>" >> "${reportDirectory}/User Command History.html"
+						echo "<b>${user} - Zsh History </b>" >> "${reportDirectory}/Command History.html"
 						while IFS=$'\n' read -r line ; do 
 
 							tmp=$(echo "${line}" | cut -d ':' -f 2 | tr -d '[:blank:]')
@@ -1246,12 +1250,14 @@ EOF
 								{
 									echo "<pre>"
 									echo "${cmdDate}  --  ${command}"
-								} >> "${reportDirectory}/User Command History.html"
+									echo "</pre>"
+								} >> "${reportDirectory}/Command History.html"
 							else
 								{
 									echo "<pre>"
 									echo "${line}"
-								} >> "${reportDirectory}/User Command History.html"
+									echo "</pre>"
+								} >> "${reportDirectory}/Command History.html"
 
 							fi
 							
@@ -1259,7 +1265,7 @@ EOF
 
 						write_sudo_commands "${user}" "Zsh"
 
-						echo "</pre><br>" >> "${reportDirectory}/User Command History.html"
+						echo "</pre><br>" >> "${reportDirectory}/Command History.html"
 
 					fi
 				fi
@@ -1281,10 +1287,12 @@ function write_sudo_commands {
 	if [ "${#SUDOCOMMANDS[@]}" -gt 0 ] ; then
 
 		{	
-			echo "<pre>"
+			
 			echo "<b>${user} ${shell} Sudo Commands</b><br><br>"
 			for c in "${SUDOCOMMANDS[@]}" ; do
+				echo "<pre>"
 				echo "${c}"
+				echo "</pre>"
 			done
 			echo "</pre><br><br>"
 		} >> "${reportDirectory}/${hostname}.html"
