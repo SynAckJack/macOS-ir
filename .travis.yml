@@ -5,11 +5,7 @@ before_install:
 script:
 - "./lint.sh"
 notifications:
-<<<<<<< Updated upstream
-  slack: $Slack
-=======
   slack:
     secure: pbwsQNBKlpXpS+ue5+lEkEM3Y9NEk9TTOAWcOJc04reDezxWHlvzuV9uKVMKY3qLRVnrMHA55YpOM0/zfBotSKVp+8pe0IXusDs9oVEJmz/zRRkL5V2wIXUOq1WvjNzSrqG9WP//2aU41Uk702kOWYwyQ3t0nA8cSAAdv+CLykaNFMFzxTevD+CiWWHH0PrsUHFXvwWyBjWqeroy7m2D3uH0dQxniaAB2abgWL6khqbAl9phwNlSJGrnmP1OvNDdGkoHNR/EI83pPtF3eUNvCsk3VJb4y9+IL57HONee0K0X2UOVI6qgNyZ+v++N+a66NacK+Nt0NSNd1BhwCxP1LL31VUIw+aMe98AR/sxpR9ni52ey9XGnrGjBrDdwxsjmFUDg3OrN4bumaVKNWUyIok7Pe04z6fxFtfpUDdJbuDfqXs7cosPrf2Ou7/+x9Yi1/5Jrz0Mw2g9TLwrQlxrmhvHzKfHfs7gjhI7H4o+6TC2h1f2BQ7Ym+U0jyF5cNiEOnf5Q0txHOnUokMJi6onT29RMQRLVfMq6FujaYgVPcF/UxupBTnS8Xz1hpZuUtpALr1V5yQuZ/d7AAojt1WzZVxMqQVwojpxRE1KG/kbAyPnjhKNfXqc4+oxy+tGfobyL+/rloGIUGzEDPGVWs6h0pHPiSjYDH4DZYKqHCus5o78=
->>>>>>> Stashed changes
   on_success: always
   on_fail: always
