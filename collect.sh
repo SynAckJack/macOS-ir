@@ -673,7 +673,7 @@ function main {
 		case ${opt} in
 			h ) usage
 				;;
-			d ) disk; 
+			d ) localDisk; 
 				;;
 			n ) local ip=${2:-"none"}; network "${ip}"
 				;;
@@ -686,8 +686,6 @@ function main {
 
 
 	log "FINISHED" "Successfully completed ?"
-
-	# Add statement to check the number of arguments and if equal to 1 then call usage.
 }
 
 main "$@"
