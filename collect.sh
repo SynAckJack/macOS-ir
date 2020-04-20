@@ -415,16 +415,16 @@ function collect {
 	tcpdump -n -U -P >> "Network/${lHostName}".pcapng & 
 	sleep 5
 
-	# time cSysdiagnose
-	time cSystemInfo
-	time cDiskInfo
-	time cNetworkInfo
-	time cSecurity
-	time cApplication
-	time cUser
-	time cLaunch
-	time cBrowsers
-	time cFiles
+	# cSysdiagnose
+	cSystemInfo
+	cDiskInfo
+	cNetworkInfo
+	cSecurity
+	cApplication
+	cUser
+	cLaunch
+	cBrowsers
+	cFiles
 
 	echo -e "\nEnding tcpdump"
 	echo "-------------------------------------------------------------------------------"
@@ -436,12 +436,14 @@ function collect {
 
 }
 
-function disk {
+# Save data to a local disk image
+function localDisk {
 	
 	local directory
 	local passphrase
 	local dirSize
 
+		# Generate random directory name
 		directory="$HOME/$(head -c24 < /dev/urandom | base64 | tr -cd '[:alnum:]')"
 
 		echo "${INFO}[*]${NC} Creating directory at ${directory}"
@@ -452,20 +454,22 @@ function disk {
 
 			lHostName="$(scutil --get LocalHostName)"
 
-			collect
+			collect "${SKIP}"
 
 			echo "${INFO}[*]${NC} Collected data. Creating disk image..."
 			log "INFO" "Creating disk image"
 
+			# Create disk image based on the size of the generated directory
 			dirSize=$(du -sk . | tr -cd '[:digit:]')
-			echo "$PWD"
 			dirSize=$((dirSize + 102400))
 
+			# Generate random passphrase
 			passphrase=$(head -c24 < /dev/urandom | base64 | tr -cd '[:alnum:]')
 
 			echo "${INFO}[*]${NC} Performing shasum of files..."
 				log "INFO" "Shasum started"
 
+				# Perform shasum of all generated files. Allows for integrity check.
 				if find . -type f -exec shasum -a 256 '{}' \; >> "${lHostName}"-shasum.txt ; then
 					echo "${PASS}[+]${NC} shasum completed. Stored in: ${lHostName}-shasum.txt"
 					log "PASS" "shasum completed"
@@ -474,8 +478,7 @@ function disk {
 					log "WARNING" "shasum failed"
 				fi
 
-				#REMOVE -format UDRW BEFORE FINALISING
-
+			# Create disk image
 			if echo -n "${passphrase}" | hdiutil create -fs apfs -size "${dirSize}"kb -format UDRW -stdinpass -encryption AES-128 -srcfolder "${directory}" "${directory}/output".dmg  ; then
 				echo "${PASS}[+]${NC} Succesfully created disk image with data at ${directory}/output.dmg."
 				log "PASS" "Disk image created. Directory: ${directory}, Passphrase: ${passphrase}"
@@ -598,9 +601,7 @@ function network {
 			exit 1
 		fi
 
-		# COLLECTION
-
-		collect
+		collect "${SKIP}"
 
 		# Compress files
 		echo "${INFO}[*]${NC} Performing Shasum of files..."
