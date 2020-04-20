@@ -1,21 +1,26 @@
 #!/usr/bin/env bash
+# macOS-ir/collect.sh 
+
+# Collect data of a macOS Catalina (10.15.x) device to be used to assist with Incident Response.
+# Output data to local disk image, USB drive or over network using netcat.
 
 set -euo pipefail
-# -e exit if any command returns non-zero status code
-# -u prevent using undefined variables
-# -o pipefail force pipelines to fail on first non-zero status code
 
-IFS=$'\n'
-
+# Colours for output
 FAIL=$(echo -en '\033[01;31m')
 PASS=$(echo -en '\033[01;32m')
 NC=$(echo -en '\033[0m')
 INFO=$(echo -en '\033[01;35m')
 WARN=$(echo -en '\033[1;33m')
 
+# Internal Field Seperator
+IFS=$'\n'
+
+# Declare global arrays
 declare -a LOGS
 declare -a USERS
 
+# Log the functions that have been executed, including the return status
 function log {
 	
 	local type
@@ -35,6 +40,7 @@ function log {
 	fi
 }
 
+# Collect history and list of downloads from browsers
 function cBrowsers {
 
 	mkdir -p "Browsers"
@@ -42,6 +48,7 @@ function cBrowsers {
 	echo -e "\nGathering browser data"
 	echo "-------------------------------------------------------------------------------"
 
+	# Curerntly works with Safari, Google Chrome and Firefox
 	# Full Disk Access must be granted for this to work.
 
 	if [ -d "/Applications/Safari.app" ] ; then
@@ -52,7 +59,7 @@ function cBrowsers {
 	fi
 
 	if [ -d "/Applications/Google Chrome.app" ] ; then
-
+		# Chrome must not be running for the data to be copied
 		if pgrep "Google Chrome" ; then
 			killall "Google Chrome"
 		fi
@@ -62,13 +69,15 @@ function cBrowsers {
 	fi
 
 	if [ -d "/Applications/Firefox.app" ] ; then
-
+		# Firefox store the data in a directoryw with a randomly generate name
+		# Database always has the same name
 		mkdir -p "Browsers/Firefox"
 		find "$HOME/Library/Application Support/Firefox/Profiles/" -name 'places.sqlite' -exec cp -R {} Browsers/Firefox \;
 	fi
 
 }
 
+# Collect launch and scheduling information
 function cLaunch {
 
 	local tempDirectory
@@ -109,6 +118,8 @@ function cLaunch {
 	echo -e "\nGathering Launch Agents and Daemons"
 	echo "-------------------------------------------------------------------------------"
 
+	# Collect Launch Agents/Daemons. 
+	# These are stored at standard paths. Storing these in an array makes it easy to search them.
 	declare -a LaunchPaths=("/Library/LaunchAgents" "/Library/LaunchDaemons" "/System/Library/LaunchAgents" "/System/Library/LaunchDaemons")
 	tempDirectory="Launch/macOSLaunchAgents"
 
@@ -135,15 +146,18 @@ function cLaunch {
 }
 
 
+# Collect the fsevents directory and hash all the users files
 function cFiles {
 
 	echo -e "\nGathering permissions and hash of user files"
 	echo "-------------------------------------------------------------------------------"
 
 	if [ "${SKIP}" == "false" ] ; then
-
+		# Skip flag not set
 		for user in "${USERS[@]}" ; do
 
+			# Skip hashing for root, nobody and daemon
+			# Typically files aren't really store here. No need to search and saves time
 			if ! [[ "${user}" == "root" || "${user}" ==  "nobody" || "${user}" == "daemon" ]] ; then
 				mkdir -p "Files/${user}"
 				find "/Users/${user}" -type f -exec stat -n -t "%d/%m/%y %R" -f "%Sp |  %Sa | %SB | " {} \; -exec shasum -a 256 {}  \; >> "Files/${user}/${user}-files.txt"
@@ -166,6 +180,7 @@ function cFiles {
 	
 }
 
+# Start sysdiagnose collection
 function cSysdiagnose {
 
 	echo -e "\nRunning sysdiagnose. This will take a while."
@@ -174,6 +189,7 @@ function cSysdiagnose {
 
 }
 
+# Gather user specific data, including a list of .files and login history
 function cUser {
 
 	if ! mkdir "User" ; then
@@ -216,20 +232,19 @@ function cUser {
 
 }
 
+# Collect a list of Application data
 function cApplication {
 
 	declare -a APPLICATIONS
-
-	#CHECK SIGNING STATUS OF APPS
 
 	if ! mkdir "Applications" ; then
 		echo "${FAIL}[-]${NC} Couldn't make disk directory. Exiting..."
 		exit 1
 	fi	
 
+	# Collect a list of non-Apple installed Applications
 	echo -e "\nGathering Application Data"
 	echo "-------------------------------------------------------------------------------"
-
 	echo -e "$(system_profiler SPApplicationsDataType | grep -E -B6 "Location:" | grep -E '^    .*:' | grep -E -A3 -B2 'Obtained from: Identified Developer|Obtained from: Unknown')" >> Applications/Applications.txt
 
 	echo -e "\nGathering Install History"
@@ -238,7 +253,6 @@ function cApplication {
 
 	echo -e "\nGathering Currently Running Processes"
 	echo "-------------------------------------------------------------------------------"
-
 	# shellcheck disable=SC2009
 	echo -e "$(ps xa -o 'user, pid, command' | grep -v '_' | tr -s ' ' | cut -d ' ' -f 1- | sort)" >> Applications/processes.txt
 
@@ -253,9 +267,12 @@ function cApplication {
 
 	for app in "${APPLICATIONS[@]}" ; do
 
+		# Check signature of .apps
+		# Xcode is skipped as it often hangs for a very long time
 		if ! [ "${app}" == "/Applications/Xcode.app" ] ; then
 			if codesign --verify --deep --strict "${app}" 2>&1 ; then
 				if stapler validate "${app}" >/dev/null 2>&1 ; then
+					# NOTE: This should only be executed if Xcode is installed
 					echo "${app}" >> Applications/notarized.txt
 				else
 					echo "${app}" >> Applications/signed.txt
@@ -263,8 +280,6 @@ function cApplication {
 			else
 				echo "${app}" >> Applications/notsigned.txt
 			fi
-		else
-			echo "SKIPPING XCODE"
 		fi
 	done
 
@@ -276,13 +291,13 @@ function cApplication {
 	while IFS=$'\n' read -r app; do
 
 		directory=$(echo "${app}" | awk -F ': ' ' { print $NF } ' )
-		# echo -e "\n ${directory}" >> Applications/hash.txt
 
 		find "${directory}" -type f -perm +0111 -exec shasum {} \; >> Applications/hash.txt		
 
 	done < <(system_profiler SPApplicationsDataType | grep -E -B6 "Location:" | grep -E '^    .*:' | grep -E -A3 -B2 'Obtained from: Identified Developer|Obtained from: Unknown' | grep 'Location:' | grep -E -v '/Library/Image Capture|/Library/Printers')
 }
 
+# Check the status of security features
 function cSecurity {
 
 	echo -e "\nGathering System Security Data"
@@ -397,6 +412,7 @@ function cDiskInfo {
 	echo -e "\n$(df -h)" >> disk/df.txt
 }
 
+# Begin collection of data
 function collect {
 
 	local lHostName
@@ -506,19 +522,21 @@ function usb {
 		echo "${INFO}[*]${NC} Checking disk ${disk}..."
 		log "INFO" "Validating USB"
 
+		# Validate that usb exists
 		if [[ -e /Volumes/"${disk}" ]] ; then
+			# Warn user that drive will be erased
 			echo "${WARN}[!]${NC} Continuing will erase this disk, proceeding in 5 seconds..."
 			sleep 5
 			echo "${PASS}[+]${NC} Continuing..."
 
 			passphrase="$(head -c24 < /dev/urandom | base64 | tr -cd '[:alnum:]')"
 
+			# Erase drive and format as APFS with random passphrase
 			if diskutil apfs eraseVolume "${disk}" -name "${disk}" -passphrase "${passphrase}" >>/dev/null  ; then
 				lHostName="$(scutil --get LocalHostName)"
 
 				echo "${INFO}[*]${NC} Disk erased. Passphrase: ${passphrase}"
 				log "INFO" "USB prepared. Passphrase: ${passphrase}"
-				#COLLECT
 
 				collect "${SKIP}"
 
@@ -533,6 +551,7 @@ function usb {
 					log "WARNING" "Shasum failed"
 				fi
 
+				# Compress collected data to a tar on usb
 				if tar cvf /Volumes/"${disk}"/output.tar ./* > /dev/null 2>&1 ; then
 					echo "${PASS}[+]${NC} Data successfully copied..."
 					log "PASS" "Data copied to USB successfully"
@@ -567,24 +586,10 @@ function network {
 
 	echo "${INFO}[*]${NC} Checking IP Address..."
 
-
 	if [ ! "${ipPort}" == "none" ] && [[ "${ipPort}" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\:[0-9]{1,5}$ ]] ; then
 
 		ip=$(echo "${ipPort}" | awk -F ":" ' { print $1 } ')
 		port=$(echo "${ipPort}" | awk -F ":" ' { print $2 } ')
-		# IFS="."
-
-		# read -r -a ipArray <<< "$ip"
-
-		# if [[ ${ipArray[0]} -le 255 ]] &&  [[ ${ipArray[1]} -le 255 ]] && [[ ${ipArray[2]} -le 255 ]] && [[ ${ipArray[3]} -le 255 ]]; then
-		# 	echo "YAY2"
-		# 	log "INFO" "IP Address valid"
-		# else
-		# 	echo "${FAIL}[-]${NC} Please provide a valid IP address and port. Exiting..."
-
-		# 	log "ERROR" "IP Address not valid"
-		# 	exit 1
-		# fi
 
 		IFS=$'\n'
 
@@ -603,7 +608,6 @@ function network {
 
 		collect "${SKIP}"
 
-		# Compress files
 		echo "${INFO}[*]${NC} Performing Shasum of files..."
 		log "INFO" "Shasum started"
 
@@ -617,9 +621,12 @@ function network {
 			log "WARN" "Shasum failed"
 		fi
 
+		# Compress data to a tar before transferring
 		if tar cvf output.tar ./* > /dev/null 2>&1 ; then
 			
 			passphrase=$(head -c24 < /dev/urandom | base64 | tr -cd '[:alnum:]')
+
+			# As tar has no option to encrypt, the data must be compressed then passed to openssl to encrypt
 			if openssl enc -e -aes256 -in output.tar -out "${lHostName}".tar -pass pass:"${passphrase}"; then
 				echo "${PASS}[+]${NC} Successfully compressed and encrypted data. Passphrase: ${passphrase}"
 				log "INFO" "Data compressed and encrypted. Passphrase: ${passphrase}"
@@ -640,6 +647,7 @@ function network {
 
 		echo "${INFO}[*]${NC} Waiting on connection..."
 
+		# Transfer using netcat
 		if nc -n "${ip}" "${port}" -w 30 < "${lHostName}.tar" ; then
 			echo "${PASS}[+]${NC} Successfully transferred data. Remember passphrase: ${passphrase}"
 			log "INFO" "Data transferred successfully"
@@ -651,6 +659,7 @@ function network {
 	fi
 }
 
+# Check sudo permissions
 function check_sudo {
 	log "INFO" "Checking sudo permissions"
 
