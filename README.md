@@ -92,7 +92,7 @@ These files aren't aimed to give the answer as to what the incident is, i.e it i
  
 ## Feedback
 
-Feedback is certainly welcome. If you have any issues or suggestions, feel free to let me know. I kinda suck at bash and this definitely isn't as efficient as it could be (working on it), but yeah. 
+Feedback is certainly welcome. If you have any issues or suggestions, feel free to let me know. I kinda suck at bash and this definitely isn't as efficient as it could be (working on it), but yeah. If you have any issues then please feel free to create one, a template has been created.
 
 ## Things I Wanna Add
 
