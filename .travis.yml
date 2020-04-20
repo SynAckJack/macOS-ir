@@ -9,6 +9,6 @@ script:
   - ./lint.sh
 
 notifications:
-  slack: macos-re:Tl7YSIDulswfO2dTTBP6Pfna
+  slack: $Slack
   on_success: always
   on_fail: always
