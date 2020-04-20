@@ -1,15 +1,9 @@
 #!/usr/bin/env bash
-#/bash/lint.sh
+#macOS-ir/lint.sh
 
-# lint.sh
-# 	Find shell scripts then run shellcheck 
-# 	Adapted from jessfraz/dotfiles/bin/test.sh
-# 	https://github.com/jessfraz/dotfiles/blob/master/test.sh
+# Adapted from 0xmachos: https://github.com/0xmachos
 
 set -euo pipefail
-# -e exit if any command returns non-zero status code
-# -u prevent using undefined variables
-# -o pipefail force pipelines to fail on first non-zero status code
 
 FAIL="\\033[1;31mFAIL\\033[0m"
 INFO="\\033[1;36mINFO\\033[0m"
