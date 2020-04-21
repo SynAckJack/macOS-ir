@@ -54,10 +54,12 @@ function usage {
 	echo -e "  Example: "
 	echo -e "  Collect and transmit using nc to localhost port 5555:"
 	echo -e "	    ./macos-ir collect -n 127.0.0.1:5555\\n"
-	echo -e "  Receive data using nc:"
-	echo -e "	    ./macos-ir analysis -n 5555\\n"
 	echo -e "  Collect, skipping file hashes, and store on usb:"
 	echo -e "	    ./macos-ir collect -s -u myUSB\\n"
+    echo -e "  Receive data using nc:"
+    echo -e "       ./macos-ir analysis -n 5555\\n"
+    echo -e "  Analyse data from local disk image:"
+    echo -e "       ./macos-ir analysis -d [path to directory]/output.dmg\\n"
 	
 }
 
