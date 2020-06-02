@@ -1,4 +1,4 @@
-# macOS-ir    [![Build Status](https://travis-ci.com/SynAckJack/macOS-ir.svg?token=whrMKztabPiqqCNsQeJt&branch=master)](https://travis-ci.com/SynAckJack/macOS-ir)
+# macOS-ir    ![Shellcheck Lint](https://github.com/SynAckJack/macOS-ir/workflows/Shellcheck%20Lint/badge.svg?branch=master)
 
 __Prototype__ tool to assist with Incident Response on macOS. Currently supports 10.15.
 
@@ -93,6 +93,10 @@ These files aren't aimed to give the answer as to what the incident is, i.e it i
 ## Feedback
 
 Feedback is certainly welcome. If you have any issues or suggestions, feel free to let me know. I kinda suck at bash and this definitely isn't as efficient as it could be (working on it), but yeah. If you have any issues then please feel free to create one, a template has been created.
+
+## Work In Progress ![Shellcheck Lint (WIP)](https://github.com/SynAckJack/macOS-ir/workflows/Shellcheck%20Lint/badge.svg?branch=wip)
+
+During development, the [wip](https://github.com/SynAckJack/macOS-ir/tree/wip) branch is used. The current build status for this branch is reflected in the badge above. 
 
 ## Things I Wanna Add
 
