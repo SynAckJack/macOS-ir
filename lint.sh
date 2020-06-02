@@ -1,97 +1,92 @@
 #!/usr/bin/env bash
-#/bash/lint.sh
 
 # lint.sh
-# 	Find shell scripts then run shellcheck 
-# 	Adapted from jessfraz/dotfiles/bin/test.sh
-# 	https://github.com/jessfraz/dotfiles/blob/master/test.sh
+# 	Execute Shellcheck on shell files of repo
+#	Adapted from 0xmachos/mOSL/test
+#	https://github.com/0xmachos/mOSL/blob/master/test
 
 set -euo pipefail
 # -e exit if any command returns non-zero status code
 # -u prevent using undefined variables
 # -o pipefail force pipelines to fail on first non-zero status code
 
-FAIL="\\033[1;31mFAIL\\033[0m"
-INFO="\\033[1;36mINFO\\033[0m"
-PASS="\\033[1;32mPASS\\033[0m"
+IFS=$'\n'
 
+FAIL=$(echo -en '\033[01;31mFAIL\033[0m')
+PASS=$(echo -en '\033[01;32mPASS\033[0m')
+INFO=$(echo -en '\033[1;33mWARN\033[0m')
 
-check_shellcheck () {
+ERRORS=()
+FILES_LINTED=()
 
-	#The below if statemenet correctly identifies if shellcheck is already however will return a non-zero exit code when shellcheck is installed via 'brew'
-	if ! [ -x "$(command -v shellcheck)" ]; then 
-	   	echo -e "[${INFO}] shellcheck not installed"
-		echo -e "[${INFO}] Attempt to install shellcheck using brew"
+function usage {
 
-		#This if statement fails
-		# if [[ $(brew install shellcheck &> /dev/null) ]] ; then
-		# 	echo -e "[${INFO}] shellcheck installed"
-		# else 
-		# 	echo -e "[${FAIL}] couldn't install shellcheck"
-		# 	echo -e "[${FAIL}] macOS: brew install shellcheck"
-		# 	exit 1
-		# fi
-	fi 
+	echo -e "usage: ./lint.sh [ -u | -l /path/to/directory/ ]\\n"
+
+    echo -e "-- If no arguments are passed then the current directory is used --\\n\\n"
+	echo -e "-u    - Show this message.\\n"
+	echo -e "-l    - Used when executing this on a local machine. "
+
+    exit 0
 }
 
+function lint {
+    # Find .sh files 
+    while IFS=$'\n' read -r path ; do
 
-lint_shell_files () {
+        FILES_LINTED+=("${path}")
 
-	for f in $(find . -type f -not -iwholename '*.git*' \
-				-not -iwholename '*venv*' \
-				-not -iwholename '*DS*' \
-				| sort -u); do
-		# Find all regular files in source directory
-
-		FILES_LINTED+=("${f}")
-
-		if file "${f}" | grep --quiet "shell" ; then
-			# Find shell files
-			
-			if ! shellcheck "${f}" ; then
-				# If shellcheck fails add failing file name to array
-				echo -e "[${FAIL}] Failed to lint ${f}"
-				ERRORS+=("${f}")
-			fi
-		
-			elif file "${f}" | grep --quiet "bash" ; then
-			# Find shell files
-			# Running file on a script with the shebang "#!/usr/bin/env ..." returns
-			# "a /usr/bin/env bash script, ASCII text executable" rather than
-			# "Bourne-Again shell script, ASCII text executable"
-
-			if ! shellcheck "${f}" ; then
-				# If shellcheck fails add failing file name to array
-				echo -e "[${FAIL}] Failed to lint ${f}"
-				ERRORS+=("${f}")
-			fi
-		fi
-	done
+        if ! shellcheck "${path}" ; then
+            echo "Failed to lint: ${path}"
+            ERRORS+=("${path}") 
+        fi
+    done < <(find "${filePath}" -iname "*.sh")
 }
 
+function main {
 
-main () {
+    filePath="."
 
-	ERRORS=()
-	FILES_LINTED=()
+    if [ $# -gt 0 ] ; then
 
-	check_shellcheck
-	lint_shell_files
+        while getopts ":lu" opt ; do
+            case "${opt}" in
+                l ) 
+                    filePath=${2:-"."}
+                    if [ "${filePath}" == "." ]; then
+                        echo -e "[$FAIL] Directory not provided..."
+                        usage
+                    else
+                        lint
+                    fi
+                    ;;
 
-	if [ ${#ERRORS[@]} -eq 0 ]; then
-		# If ERRORS empty then 
-		echo -e "[${PASS}] No errors, hooray"
-		echo -e "[${PASS}] The files were linted: "
-		for l in "${FILES_LINTED[@]}" ; do
-  			echo "${l}"
-		done
+                u )
+                    usage
+                    ;;
 
-		exit 0
-	else
-		# If errors print the names of files which failed
-		echo -e "[${FAIL}] These files failed linting: ${ERRORS[*]}"
-		exit 1
-	fi
+                * )
+                    usage
+                    ;;
+            esac
+        done
+    else
+        lint
+    fi
+
+    # List files that have been linted
+    echo -e "[${INFO}] These files were linted: \n${FILES_LINTED[*]}\n"
+
+    if [ ${#ERRORS[@]} -gt 0 ] ; then
+    # Errors exist. Print the files that failed.
+        echo -e "[${FAIL}] These files failed linting: \n${ERRORS[*]}"
+        exit 1
+    else
+        # No errors exist. 
+        echo -e "[${PASS}] Everything passed!"
+        exit 0
+    fi
 }
 
 main "$@"
+
