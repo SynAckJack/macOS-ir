@@ -1,18 +1,17 @@
 #!/usr/bin/env bash
+# macOS-ir/macos-ir.sh 
+
+# Collect and analyse data of a macOS Catalina (10.15.x) device to be used to assist with Incident Response.
 
 set -euo pipefail
-# -e exit if any command returns non-zero status code
-# -u prevent using undefined variables
-# -o pipefail force pipelines to fail on first non-zero status code
 
+# Colours for output
 FAIL=$(echo -en '\033[01;31m')
-# PASS=$(echo -en '\033[01;32m')
 NC=$(echo -en '\033[0m')
 INFO=$(echo -en '\033[01;35m')
 WARN=$(echo -en '\033[1;33m')
 
-SKIP=false
-
+# Internal Field Seperator
 IFS=$'\n'
 
 function usage {
@@ -55,14 +54,19 @@ function usage {
 	echo -e "  Example: "
 	echo -e "  Collect and transmit using nc to localhost port 5555:"
 	echo -e "	    ./macos-ir collect -n 127.0.0.1:5555\\n"
-	echo -e "  Receive data using nc:"
-	echo -e "	    ./macos-ir analysis -n 5555\\n"
 	echo -e "  Collect, skipping file hashes, and store on usb:"
 	echo -e "	    ./macos-ir collect -s -u myUSB\\n"
+    echo -e "  Receive data using nc:"
+    echo -e "       ./macos-ir analysis -n 5555\\n"
+    echo -e "  Analyse data from local disk image:"
+    echo -e "       ./macos-ir analysis -d [path to directory]/output.dmg\\n"
 	
 }
 
 function install_tools {
+
+	# Check if the required tools are installed. If not, install them.
+	# Installs Xcode Tools and Homebrew. Brewfile (macOS-ir/Brewfile) used by Homebrew.
 
 	echo -e "\n${INFO}[*]${NC} Installing XCode Tools"
 	echo "-------------------------------------------------------------------------------"
@@ -74,6 +78,7 @@ function install_tools {
 
 	if ! [[ "$(command -v brew)" > /dev/null ]] ; then
 
+		# Install Homebrew
 		echo -e "\n${INFO}[*]${NC} Installing Homebrew"
 		echo "-------------------------------------------------------------------------------"
 		if ! /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" ; then
@@ -86,13 +91,10 @@ function install_tools {
 	echo -e "\n${INFO}[*]${NC} Installing Tools Using Homebrew"
 	echo "-------------------------------------------------------------------------------"
 
-	echo "Updating Homebrew..."
 	brew update >> /dev/null
 
-	echo "Upgrading Homebrew..."
 	brew upgrade >> /dev/null
 
-	echo "Installing tools using brewfile..."
 	brew bundle --file Brewfile
 
 
@@ -100,24 +102,28 @@ function install_tools {
 
 function main {
 	
+	# Validate user input and begin either collection or analysis
+
 	var=${1:-"usage"}
+	SKIP=false
 
 	case "${var}" in
 		collect ) 
 			shift
 
-			if [[ ${1} == "-s" ]] ; then
+
+			if [[ "${2:-"false"}" == "-s" ]] ; then
+				# User entered -s, skip var set to true
 				SKIP="true"
-				shift
 			fi
 
+			# User wishes to beginc collection. Validate input and execute collect.sh with specified flags
 			while getopts ":hdnu" opt; do
 				case ${opt} in
 					h ) usage
 						;;
 
-					d ) echo "collect disk" 
-						echo "${WARN}[!]${NC} Sudo permissions required..."
+					d ) echo "${WARN}[!]${NC} Sudo permissions required..."
 						sudo ./collect.sh -d "${SKIP}"
 						;;
 
@@ -125,13 +131,17 @@ function main {
 						
 						if ! [ "${ipPort}" == "none" ] ; then
 
+							# Seperate IP address and port
+							# Makes for easier parsing
 							ip=$(echo "${ipPort}" | awk -F ":" ' { print $1 } ')
 							port=$(echo "${ipPort}" | awk -F ":" ' { print $2 } ')
 
+							# Set Internal Field Seperator
 							IFS="."
 
 							read -r -a ipArray <<< "$ip"
 
+							#Verify data provided is a valid IP and port
 							if [[ ${ipArray[0]} -le 255 ]] &&  [[ ${ipArray[1]} -le 255 ]] && [[ ${ipArray[2]} -le 255 ]] && [[ ${ipArray[3]} -le 255 ]] && [[ ${port} -le 65365 ]]; then
 
 								echo "${WARN}[!]${NC} Sudo permissions required..."
@@ -150,6 +160,7 @@ function main {
 
 						if ! [ "${disk}" == "none" ] ; then
 
+							# Verify that the provided disk name exists
 							if [[ -e /Volumes/"${disk}" ]] ; then
 								echo "${WARN}[!]${NC} Sudo permissions required..."
 								sudo ./collect.sh -u "${disk}" "${SKIP}"
@@ -174,8 +185,9 @@ function main {
 			;;
 
 		analysis ) 
-			shift 
+			shift 	
 
+			# User wishes to begin analysis.
 			while getopts ":hdnui" opt; do
 				case ${opt} in
 					h ) usage
@@ -185,7 +197,7 @@ function main {
 						if ! [ "${diskImage}" == "none" ] ; then
 							install_tools
 							echo "${WARN}[!]${NC} Sudo permissions required..."
-							sudo ./analysis -d "${diskImage}"
+							sudo ./analysis.sh -d "${diskImage}"
 						else
 							echo "${FAIL}[-]${NC} Please provide a disk name. Exiting..."
 						fi

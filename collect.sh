@@ -1,21 +1,26 @@
 #!/usr/bin/env bash
+# macOS-ir/collect.sh 
+
+# Collect data of a macOS Catalina (10.15.x) device to be used to assist with Incident Response.
+# Output data to local disk image, USB drive or over network using netcat.
 
 set -euo pipefail
-# -e exit if any command returns non-zero status code
-# -u prevent using undefined variables
-# -o pipefail force pipelines to fail on first non-zero status code
 
-IFS=$'\n'
-
+# Colours for output
 FAIL=$(echo -en '\033[01;31m')
 PASS=$(echo -en '\033[01;32m')
 NC=$(echo -en '\033[0m')
 INFO=$(echo -en '\033[01;35m')
 WARN=$(echo -en '\033[1;33m')
 
+# Internal Field Seperator
+IFS=$'\n'
+
+# Declare global arrays
 declare -a LOGS
 declare -a USERS
 
+# Log the functions that have been executed, including the return status
 function log {
 	
 	local type
@@ -35,13 +40,15 @@ function log {
 	fi
 }
 
+# Collect history and list of downloads from browsers
 function cBrowsers {
 
-	mkdir "Browsers"
-
+	mkdir -p "Browsers"
+		
 	echo -e "\nGathering browser data"
 	echo "-------------------------------------------------------------------------------"
 
+	# Curerntly works with Safari, Google Chrome and Firefox
 	# Full Disk Access must be granted for this to work.
 
 	if [ -d "/Applications/Safari.app" ] ; then
@@ -52,7 +59,7 @@ function cBrowsers {
 	fi
 
 	if [ -d "/Applications/Google Chrome.app" ] ; then
-
+		# Chrome must not be running for the data to be copied
 		if pgrep "Google Chrome" ; then
 			killall "Google Chrome"
 		fi
@@ -62,13 +69,15 @@ function cBrowsers {
 	fi
 
 	if [ -d "/Applications/Firefox.app" ] ; then
-
+		# Firefox store the data in a directoryw with a randomly generate name
+		# Database always has the same name
 		mkdir -p "Browsers/Firefox"
 		find "$HOME/Library/Application Support/Firefox/Profiles/" -name 'places.sqlite' -exec cp -R {} Browsers/Firefox \;
 	fi
 
 }
 
+# Collect launch and scheduling information
 function cLaunch {
 
 	local tempDirectory
@@ -105,9 +114,12 @@ function cLaunch {
 
 	done < <(dscl . list /Users | grep -v '_')
 
+	
 	echo -e "\nGathering Launch Agents and Daemons"
 	echo "-------------------------------------------------------------------------------"
 
+	# Collect Launch Agents/Daemons. 
+	# These are stored at standard paths. Storing these in an array makes it easy to search them.
 	declare -a LaunchPaths=("/Library/LaunchAgents" "/Library/LaunchDaemons" "/System/Library/LaunchAgents" "/System/Library/LaunchDaemons")
 	tempDirectory="Launch/macOSLaunchAgents"
 
@@ -126,27 +138,29 @@ function cLaunch {
 	for user in "${USERS[@]}" ; do 
 
 		mkdir -p "${tempDirectory}/${user}"
-		cp "${user}"/Library/LaunchAgents "${tempDirectory}/${user}"/ 2&> /dev/null
+		cp /Users/"${user}"/Library/LaunchAgents/* "${tempDirectory}/${user}" 2>/dev/null
 
 	done
 
 	set -e
-
 }
 
 
+# Collect the fsevents directory and hash all the users files
 function cFiles {
 
 	echo -e "\nGathering permissions and hash of user files"
 	echo "-------------------------------------------------------------------------------"
 
 	if [ "${SKIP}" == "false" ] ; then
-
+		# Skip flag not set
 		for user in "${USERS[@]}" ; do
 
+			# Skip hashing for root, nobody and daemon
+			# Typically files aren't really store here. No need to search and saves time
 			if ! [[ "${user}" == "root" || "${user}" ==  "nobody" || "${user}" == "daemon" ]] ; then
 				mkdir -p "Files/${user}"
-				find "/Users/${user}" ! -path "/Users/${user}/Library/*" -type f -exec stat -n -t "%d/%m/%y %R" -f "%Sp |  %Sa | %SB | " {} \; -exec shasum -a 256 {}  \; >> "Files/${user}/${user}-files.txt"
+				find "/Users/${user}" -type f -exec stat -n -t "%d/%m/%y %R" -f "%Sp |  %Sa | %SB | " {} \; -exec shasum -a 256 {}  \; >> "Files/${user}/${user}-files.txt"
 			fi
 			
 		done
@@ -163,8 +177,10 @@ function cFiles {
 		echo "SKIP set. Skipping...."
 	fi
 		
+	
 }
 
+# Start sysdiagnose collection
 function cSysdiagnose {
 
 	echo -e "\nRunning sysdiagnose. This will take a while."
@@ -173,6 +189,7 @@ function cSysdiagnose {
 
 }
 
+# Gather user specific data, including a list of .files and login history
 function cUser {
 
 	if ! mkdir "User" ; then
@@ -194,6 +211,7 @@ function cUser {
 
 		find "${homeDir}" -name ".*" -exec cp {} User/"${users}" \; 2> /dev/null
 
+		# Currently this needs to be run without sudo...
 		if [[ -f "${homeDir}".zsh_history ]] ; then
 			history -En > User/"${users}"/zsh_history
 		fi
@@ -205,15 +223,16 @@ function cUser {
 	echo -e "\nGathering login history"
 	echo "-------------------------------------------------------------------------------"
 	
-	echo -e "\n-- last: \n$(last)" >> User/last.txt
+	echo -e "\n$(last)" >> User/last.txt
 
 	echo -e "\nGathering sudo users"
 	echo "-------------------------------------------------------------------------------"
 	cp /etc/sudoers User/
-
+	
 
 }
 
+# Collect a list of Application data
 function cApplication {
 
 	declare -a APPLICATIONS
@@ -223,9 +242,9 @@ function cApplication {
 		exit 1
 	fi	
 
+	# Collect a list of non-Apple installed Applications
 	echo -e "\nGathering Application Data"
 	echo "-------------------------------------------------------------------------------"
-
 	echo -e "$(system_profiler SPApplicationsDataType | grep -E -B6 "Location:" | grep -E '^    .*:' | grep -E -A3 -B2 'Obtained from: Identified Developer|Obtained from: Unknown')" >> Applications/Applications.txt
 
 	echo -e "\nGathering Install History"
@@ -234,7 +253,6 @@ function cApplication {
 
 	echo -e "\nGathering Currently Running Processes"
 	echo "-------------------------------------------------------------------------------"
-
 	# shellcheck disable=SC2009
 	echo -e "$(ps xa -o 'user, pid, command' | grep -v '_' | tr -s ' ' | cut -d ' ' -f 1- | sort)" >> Applications/processes.txt
 
@@ -249,9 +267,12 @@ function cApplication {
 
 	for app in "${APPLICATIONS[@]}" ; do
 
+		# Check signature of .apps
+		# Xcode is skipped as it often hangs for a very long time
 		if ! [ "${app}" == "/Applications/Xcode.app" ] ; then
 			if codesign --verify --deep --strict "${app}" 2>&1 ; then
 				if stapler validate "${app}" >/dev/null 2>&1 ; then
+					# NOTE: This should only be executed if Xcode is installed
 					echo "${app}" >> Applications/notarized.txt
 				else
 					echo "${app}" >> Applications/signed.txt
@@ -259,8 +280,6 @@ function cApplication {
 			else
 				echo "${app}" >> Applications/notsigned.txt
 			fi
-		else
-			echo "SKIPPING XCODE"
 		fi
 	done
 
@@ -272,13 +291,13 @@ function cApplication {
 	while IFS=$'\n' read -r app; do
 
 		directory=$(echo "${app}" | awk -F ': ' ' { print $NF } ' )
-		# echo -e "\n ${directory}" >> Applications/hash.txt
 
 		find "${directory}" -type f -perm +0111 -exec shasum {} \; >> Applications/hash.txt		
 
 	done < <(system_profiler SPApplicationsDataType | grep -E -B6 "Location:" | grep -E '^    .*:' | grep -E -A3 -B2 'Obtained from: Identified Developer|Obtained from: Unknown' | grep 'Location:' | grep -E -v '/Library/Image Capture|/Library/Printers')
 }
 
+# Check the status of security features
 function cSecurity {
 
 	echo -e "\nGathering System Security Data"
@@ -311,6 +330,7 @@ function cSecurity {
 		status="disabled"
 	fi
 
+
 	echo " - macOS Firewall: ${status}" >> security.txt
 
 	if [[ "$(defaults read /Library/Preferences/com.apple.alf stealthenabled)" -ge 1 ]] ; then
@@ -336,6 +356,22 @@ function cSecurity {
 
 	echo " - macOS update status: ${status}" >> security.txt
 
+	if fdesetup status | grep "On" > /dev/null ; then
+		status="enabled"
+	else
+		status="disabled"
+	fi
+
+	echo " - Filevault: ${status}" >> security.txt
+
+	if sudo firmwarepasswd -check | grep -q 'Yes' ; then
+		status="enabled"
+	else
+		status="disabled"
+	fi
+
+	echo " - Firmware Password: ${status}" >> security.txt
+
 }
 
 function cSystemInfo {
@@ -348,17 +384,13 @@ function cSystemInfo {
 		echo -e "\nHostname: \t$(hostname)"
 		echo -e "\nSoftware Version: \t$(sw_vers -productVersion)"
 		echo -e "\nKernel Info: \t$(uname -a)"
-		echo -e "\nSystem Uptime: \t$(uptime)" 
+		echo -e "\nSystem Uptime: \t$(uptime)"
+		echo -e "\nSerial Number: \t$(system_profiler SPHardwareDataType | grep "Serial Number" | awk -F ':' ' { print $NF } ')" 
 	} >> systeminfo.txt
 
 }
 
 function cNetworkInfo {
-
-	if ! mkdir "network" ; then
-		echo "${FAIL}[-]${NC} Couldn't make network directory. Exiting..."
-		exit 1
-	fi
 
 	echo -e "\nGathering network info"
 	echo "-------------------------------------------------------------------------------"
@@ -377,11 +409,12 @@ function cDiskInfo {
 	echo -e "\nGathering disk info"
 	echo "-------------------------------------------------------------------------------"
 	echo -e "\n$(diskutil list)" >> disk/diskutil.txt
-	echo -e "\n$(df -h)" >> disk/df.txtc
+	echo -e "\n$(df -h)" >> disk/df.txt
 }
 
+# Begin collection of data
 function collect {
-	
+
 	local lHostName
 	
 	echo "${INFO}[*]${NC} Started collection...Writing to collect.log"
@@ -398,16 +431,16 @@ function collect {
 	tcpdump -n -U -P >> "Network/${lHostName}".pcapng & 
 	sleep 5
 
-	# time cSysdiagnose
-	time cSystemInfo
-	time cDiskInfo
-	time cNetworkInfo
-	time cSecurity
-	time cApplication
-	time cUser
-	time cLaunch
-	time cBrowsers
-	time cFiles
+	# cSysdiagnose
+	cSystemInfo
+	cDiskInfo
+	cNetworkInfo
+	cSecurity
+	cApplication
+	cUser
+	cLaunch
+	cBrowsers
+	cFiles
 
 	echo -e "\nEnding tcpdump"
 	echo "-------------------------------------------------------------------------------"
@@ -419,12 +452,14 @@ function collect {
 
 }
 
-function disk {
+# Save data to a local disk image
+function localDisk {
 	
 	local directory
 	local passphrase
 	local dirSize
 
+		# Generate random directory name
 		directory="$HOME/$(head -c24 < /dev/urandom | base64 | tr -cd '[:alnum:]')"
 
 		echo "${INFO}[*]${NC} Creating directory at ${directory}"
@@ -440,15 +475,17 @@ function disk {
 			echo "${INFO}[*]${NC} Collected data. Creating disk image..."
 			log "INFO" "Creating disk image"
 
+			# Create disk image based on the size of the generated directory
 			dirSize=$(du -sk . | tr -cd '[:digit:]')
-			echo "$PWD"
 			dirSize=$((dirSize + 102400))
 
+			# Generate random passphrase
 			passphrase=$(head -c24 < /dev/urandom | base64 | tr -cd '[:alnum:]')
 
 			echo "${INFO}[*]${NC} Performing shasum of files..."
 				log "INFO" "Shasum started"
 
+				# Perform shasum of all generated files. Allows for integrity check.
 				if find . -type f -exec shasum -a 256 '{}' \; >> "${lHostName}"-shasum.txt ; then
 					echo "${PASS}[+]${NC} shasum completed. Stored in: ${lHostName}-shasum.txt"
 					log "PASS" "shasum completed"
@@ -457,12 +494,10 @@ function disk {
 					log "WARNING" "shasum failed"
 				fi
 
-				#REMOVE -format UDRW BEFORE FINALISING
-
+			# Create disk image
 			if echo -n "${passphrase}" | hdiutil create -fs apfs -size "${dirSize}"kb -format UDRW -stdinpass -encryption AES-128 -srcfolder "${directory}" "${directory}/output".dmg  ; then
 				echo "${PASS}[+]${NC} Succesfully created disk image with data at ${directory}/output.dmg."
 				log "PASS" "Disk image created. Directory: ${directory}, Passphrase: ${passphrase}"
-
 				echo "${INFO}[*]${NC} Passphrase for image: ${passphrase}"
 			else
 				echo "${FAIL}[-]${NC} Failed to create disk image. Exiting..."
@@ -487,22 +522,24 @@ function usb {
 		echo "${INFO}[*]${NC} Checking disk ${disk}..."
 		log "INFO" "Validating USB"
 
+		# Validate that usb exists
 		if [[ -e /Volumes/"${disk}" ]] ; then
+			# Warn user that drive will be erased
 			echo "${WARN}[!]${NC} Continuing will erase this disk, proceeding in 5 seconds..."
 			sleep 5
 			echo "${PASS}[+]${NC} Continuing..."
 
 			passphrase="$(head -c24 < /dev/urandom | base64 | tr -cd '[:alnum:]')"
 
+			# Erase drive and format as APFS with random passphrase
 			if diskutil apfs eraseVolume "${disk}" -name "${disk}" -passphrase "${passphrase}" >>/dev/null  ; then
 				lHostName="$(scutil --get LocalHostName)"
 
 				echo "${INFO}[*]${NC} Disk erased. Passphrase: ${passphrase}"
 				log "INFO" "USB prepared. Passphrase: ${passphrase}"
-				#COLLECT
 
-				collect "${SKIP}" 
-				
+				collect "${SKIP}"
+
 				echo "${INFO}[*]${NC} Performing shasum of files..."
 				log "INFO" "Shasum started"
 
@@ -514,6 +551,7 @@ function usb {
 					log "WARNING" "Shasum failed"
 				fi
 
+				# Compress collected data to a tar on usb
 				if tar cvf /Volumes/"${disk}"/output.tar ./* > /dev/null 2>&1 ; then
 					echo "${PASS}[+]${NC} Data successfully copied..."
 					log "PASS" "Data copied to USB successfully"
@@ -548,10 +586,12 @@ function network {
 
 	echo "${INFO}[*]${NC} Checking IP Address..."
 
-	if [ ! "${ip}" == "none" ] && [[ "${ip}" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\:[0-9]{1,5}$ ]] ; then
+	if [ ! "${ipPort}" == "none" ] && [[ "${ipPort}" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\:[0-9]{1,5}$ ]] ; then
 
 		ip=$(echo "${ipPort}" | awk -F ":" ' { print $1 } ')
 		port=$(echo "${ipPort}" | awk -F ":" ' { print $2 } ')
+
+		IFS=$'\n'
 
 		directory="$HOME/$(head -c24 < /dev/urandom | base64 | tr -cd '[:alnum:]')"
 
@@ -560,18 +600,14 @@ function network {
 	
 		if ! [[ -d "${directory}" ]] ; then
 			mkdir "${directory}" && cd "${directory}"
-			echo "BAM $PWD"
 		else
 			echo "${FAIL}[-]${NC} Failed to create directory. Exiting..."
 			log "ERROR" "Couldn't create directory ${directory}"
 			exit 1
 		fi
 
-		# COLLECTION
-
 		collect "${SKIP}"
 
-		# Compress files
 		echo "${INFO}[*]${NC} Performing Shasum of files..."
 		log "INFO" "Shasum started"
 
@@ -585,9 +621,12 @@ function network {
 			log "WARN" "Shasum failed"
 		fi
 
+		# Compress data to a tar before transferring
 		if tar cvf output.tar ./* > /dev/null 2>&1 ; then
 			
 			passphrase=$(head -c24 < /dev/urandom | base64 | tr -cd '[:alnum:]')
+
+			# As tar has no option to encrypt, the data must be compressed then passed to openssl to encrypt
 			if openssl enc -e -aes256 -in output.tar -out "${lHostName}".tar -pass pass:"${passphrase}"; then
 				echo "${PASS}[+]${NC} Successfully compressed and encrypted data. Passphrase: ${passphrase}"
 				log "INFO" "Data compressed and encrypted. Passphrase: ${passphrase}"
@@ -608,6 +647,7 @@ function network {
 
 		echo "${INFO}[*]${NC} Waiting on connection..."
 
+		# Transfer using netcat
 		if nc -n "${ip}" "${port}" -w 30 < "${lHostName}.tar" ; then
 			echo "${PASS}[+]${NC} Successfully transferred data. Remember passphrase: ${passphrase}"
 			log "INFO" "Data transferred successfully"
@@ -619,6 +659,7 @@ function network {
 	fi
 }
 
+# Check sudo permissions
 function check_sudo {
 	log "INFO" "Checking sudo permissions"
 
@@ -631,30 +672,21 @@ function check_sudo {
 
 }
 
-# function checkXCode {
-
-# 	if ! xcode-select --install 2>&1 | grep -c 'already installed'  >> /dev/null; then
-# 		echo "${WARN}[!]${NC} XCode Tools must be installed. Please follow the prompt to install and then run again."
-# 		exit 1
-# 	fi
-
-# }
-
 function main {
 
 	check_sudo
 
-	SKIP="false"
+	SKIP=${2:-"false"}
 
 	while getopts ":hdnu" opt; do
 		case ${opt} in
 			h ) usage
 				;;
-			d ) SKIP=${1:-"false"}; disk; 
+			d ) localDisk; 
 				;;
-			n ) local ip=${2:-"none"}; SKIP=${3:-"false"}; network "${ip}"
+			n ) local ip=${2:-"none"}; network "${ip}"
 				;;
-			u ) local disk=${2:-"none"}; SKIP=${3:-"false"}; usb "${disk}"
+			u ) local disk=${2:-"none"}; usb "${disk}"
 				;;
 			* ) usage
 				;;
@@ -662,9 +694,7 @@ function main {
 	done
 
 
-	log "FINISHED" "Successfully completed ✅"
-
-	# Add statement to check the number of arguments and if equal to 1 then call usage.
+	log "FINISHED" "Successfully completed ?"
 }
 
 main "$@"

@@ -1,17 +1,22 @@
 #!/usr/bin/env bash
+# macOS-ir/analysis.sh 
+
+# Analyse collected data from executign collect.sh.
+# Produce PDF's stored in /tmp/Report/hostname-date/
 
 set -euo pipefail
-# -e exit if any command returns non-zero status code
-# -u prevent using undefined variables
-# -o pipefail force pipelines to fail on first non-zero status code
 
-IFS=$'\n'
-
+# Colours for output
 FAIL=$(echo -en '\033[01;31m')
 PASS=$(echo -en '\033[01;32m')
 NC=$(echo -en '\033[0m')
 INFO=$(echo -en '\033[01;35m')
 WARN=$(echo -en '\033[1;33m')
+
+# Internal Field Seperator
+IFS=$'\n'
+
+# Log the functions that have been executed, including the return status
 
 function log {
 	
@@ -32,7 +37,7 @@ function log {
 	fi
 }
 
-
+# Verify integrity of received files. 
 function check_hash {
 
 	echo -e "\n${INFO}[*]${NC} Checking shasum of files"
@@ -59,7 +64,9 @@ function check_hash {
 			if echo "${i}" | grep -v -E "shasum.txt" ; then
 				echo "${i}"
 			else
+				# As the file that contains the checksum can't be hashed, this will always fail
 				echo "Checksum file failed. This is due to the checksum file not containing a hash for itself. Don't worry about it..."	
+				# TODO: Add an IF to check for this file and handle it
 			fi
 		done
 	else
@@ -67,6 +74,7 @@ function check_hash {
 	fi
 }
 
+# Parse data for some files that are specifically formatted.
 function read_file {
 
 	filename="$1"
@@ -79,13 +87,13 @@ function read_file {
 			LINES+=("$(echo "${line}" | cut -d':' -f 2-)")
 		fi
 		
-
 		done < <(cat "${filename}")
 	
 	fi
 
 }
 
+# Create the main PDF html format. This will later be converted to a PDF
 function create_main_html {
 
 		cat << EOF > "${reportDirectory}/${hostname}.html"
@@ -176,6 +184,7 @@ function create_main_html {
 EOF
 }
 
+# Create another html file. This is used for data that isn't needed in the main html or would be too large to include
 function create_secondary_html {
 
 	local title="$1"
@@ -226,6 +235,7 @@ EOF
 
 }
 
+# Parse the system information
 function analyse_sysinfo {
 	
 	echo -e "\n${INFO}[*]${NC} Analysing sysinfo"
@@ -238,9 +248,11 @@ function analyse_sysinfo {
 	dMacOSVersion="${LINES[2]}"
 	dKernelVersion="${LINES[3]}"
 	dUptime="${LINES[4]}"
+	dSerialNumber="${LINES[5]}"
 
 
-cat << EOF > "${reportDirectory}/${hostname}.html"
+# Write the data to the respective html file
+cat << EOF >> "${reportDirectory}/${hostname}.html"
 	<h1 id="systeminformation">System Information</h1>
 	<br>
 		<table>
@@ -264,6 +276,10 @@ cat << EOF > "${reportDirectory}/${hostname}.html"
 		    <td>Uptime: </td>
 		    <td>${dUptime}</td> 
 		  </tr>
+		  <tr>
+		    <td>Serial Number: </td>
+		    <td>${dSerialNumber}</td> 
+		  </tr>
 		</table>
 
 		<br><br><br>
@@ -272,6 +288,7 @@ EOF
 
 }
 
+# Parse the data from the security file
 function analyse_security {
 
 	unset "LINES[@]"
@@ -288,8 +305,36 @@ function analyse_security {
 	dStealthFirewall="${LINES[4]}"
 	dXProtect="${LINES[5]}"
 	dUpdateStatus="${LINES[7]}"
+	dFileVault="${LINES[8]}"
+	dFirmwarePassword="${LINES[9]}"
 
-cat << EOF > "${reportDirectory}/${hostname}.html"
+	# Check the values received from the file
+	# Underline and CAPS if the value is unexpected, such as a feature being disabled
+	if [[ "${dSIP}" == " disabled" ]] ; then
+		dSIP="<u> DISABLED</u>"
+	fi
+
+	if [[ "${dEFI}" == " failed" ]] ; then
+		dEFI="<u> FAILED</u>"
+	fi
+
+	if [[ "${dFirewall}" == " disabled" ]] ; then
+		dFirewall="<u> DISABLED</u>"
+	fi
+
+	if [[ "${dStealthFirewall}" == " disabled" ]] ; then
+		dStealthFirewall="<u> DISABLED</u>"
+	fi
+
+	if [[ "${dUpdateStatus}" == " Update Available" ]] ; then
+		dUpdateStatus="<u> UPDATE AVAILABLE</u>"
+	fi
+
+	if [[ "${dFileVault}" == " disabled" ]] ; then
+		dFileVault="<u> DISABLED</u>"
+	fi
+
+	cat << EOF >> "${reportDirectory}/${hostname}.html"
 
 	<h1 id="securityinformation">Security Information</h1>
 	<br>
@@ -322,6 +367,14 @@ cat << EOF > "${reportDirectory}/${hostname}.html"
 		    <td>Update Status: </td>
 		    <td>${dUpdateStatus}</td> 
 		  </tr>
+		  <tr>
+		    <td>FileVault Status: </td>
+		    <td>${dFileVault}</td> 
+		  </tr>
+		  <tr>
+		    <td>Firmware Password: </td>
+		    <td>${dFirmwarePassword}</td> 
+		  </tr>
 		</table>
 	<br><br><br>
 EOF
@@ -334,7 +387,7 @@ function analyse_applications {
 	echo "-------------------------------------------------------------------------------"
 
 
-cat << EOF > "${reportDirectory}/${hostname}.html"
+cat << EOF >> "${reportDirectory}/${hostname}.html"
 
 
 	<h1 id="applicationinformation">Application Information</h1>
@@ -375,7 +428,11 @@ EOF
 				{
 					echo "<tr>"
 					echo "<td>${title}: </td>"
-					echo "<td>${value}</td>"
+					if [[ "${value}" == " Unknown" ]] ; then
+						echo "<td><u>${value}</u></td>"
+					else 
+						echo "<td>${value}</td>"
+					fi
 					echo "</tr>"
 				}  >> "${reportDirectory}/${hostname}.html"
 			fi
@@ -384,20 +441,21 @@ EOF
 
 	done 
 
-	cat << EOF > "${reportDirectory}/${hostname}.html"
-
+	cat << EOF >> "${reportDirectory}/${hostname}.html"
 
 		</table>
 		<br><br><br>
 EOF
 }
 
+# Print the install history. 
+# Not much handling needs done here as it was filtered at time of collection
 function analyse_install_history {
 
 	echo -e "\n${INFO}[*]${NC} Analysing install history"
 	echo "-------------------------------------------------------------------------------"
 
-	cat << EOF > "${reportDirectory}/${hostname}.html"
+	cat << EOF >> "${reportDirectory}/${hostname}.html"
 
 
 	<h1 id="installhistory">Install History</h1>
@@ -415,6 +473,7 @@ echo "</table><br><br><br>"  >> "${reportDirectory}/${hostname}.html"
 
 }
 
+# Print the hash of the executables
 function print_hash {
 
 	echo -e "\n${INFO}[*]${NC} Printing Executable Hashes"
@@ -432,11 +491,10 @@ function print_hash {
 EOF
 	
 	while IFS=$'\n' read -r line ; do
-
+		# Seperate the filepath and hash so that they can be spaced correctly
 		tempLine=$(echo "${line}" | awk -F '  ' ' { print $1 } ')
 		echo "<tr>" >> "${reportDirectory}/Hash of Executables.html"
 		echo "<td>${tempLine}</td>" >> "${reportDirectory}/Hash of Executables.html"
-		# echo "<tr>" >> "${reportDirectory}/${hostname}.html" 
 
 		tempLine=$(echo "${line}" | awk -F '  ' ' { print $2 } ')
 		echo "<td>${tempLine}</td>" >> "${reportDirectory}/Hash of Executables.html"
@@ -453,6 +511,8 @@ cat << EOF >> "${reportDirectory}/Hash of Executables.html"
 EOF
 }
 
+# Print a list of Applications and their signature status
+# Print only unsigned .apps to the main PDF. Otherwise print to a secondary file
 function print_signing {
 
 	echo -e "\n${INFO}[*]${NC} Printing Non-Signed Applications"
@@ -466,14 +526,14 @@ function print_signing {
 
 EOF
 
-	if [ -f /Applications/notsigned.txt ] ; then
+	if [ -f Applications/notsigned.txt ] ; then
 
 		echo "<i>Note: The following applications are classed as 'Not Signed'. This can be due to them not being signed or failing the requirements for signing.</i><br><br>" >> "${reportDirectory}/${hostname}.html" 
 		while IFS=$'\n' read -r line ; do
 
 			echo "${line}<br>" >> "${reportDirectory}/${hostname}.html" 
 
-		done < <(cat /Applications/notsigned.txt)
+		done < <(cat Applications/notsigned.txt)
 
 	else
 		echo "All Applications are signed!<br>" >> "${reportDirectory}/${hostname}.html" 
@@ -481,7 +541,7 @@ EOF
 
 	echo "<br><br><i>A list of all Applications and their signing status can be found in 'Application Signing Status.pdf'.</i><br>" >> "${reportDirectory}/${hostname}.html"
 
-	if [ -f /Applications/notsigned.txt ] && [ -f /Applications/signed.txt ] ; then
+	if [ -f Applications/notsigned.txt ] && [ -f Applications/signed.txt ] ; then
 	
 		create_secondary_html "Application Signing Status"
 
@@ -496,7 +556,7 @@ EOF
 
 				echo "${line}<br>" >> "${reportDirectory}/Application Signing Status.html"
 
-			done < <(cat /Applications/notarized.txt)
+			done < <(cat Applications/notarized.txt)
 
 		fi
 
@@ -510,7 +570,7 @@ EOF
 
 			echo "${line}<br>" >> "${reportDirectory}/Application Signing Status.html"
 
-		done < <(cat /Applications/signed.txt)
+		done < <(cat Applications/signed.txt)
 
 		{
 			echo "<br><br><br>"
@@ -523,11 +583,12 @@ EOF
 
 			echo "${line}<br>" >> "${reportDirectory}/Application Signing Status.html"
 
-		done < <(cat /Applications/notsigned.txt)
+		done < <(cat Applications/notsigned.txt)
 	fi
 
 }
 
+# Extract data from the history and download files for each browser
 function analyse_browser {
 
 	echo -e "\n${INFO}[*]${NC} Analysing Browsers"
@@ -554,6 +615,8 @@ EOF
 
 	if [ -d Browsers/Safari/ ] ; then
 
+		# To make life easier, convert the Safari Download.plist to xml
+		# It makes searching easier
 		if plutil -convert xml1 Browsers/Safari/Downloads.plist -o /tmp/Downloads.xml  ; then
 			TMPFILES+=("/tmp/Downloads.xml")
 
@@ -564,15 +627,17 @@ EOF
 
 				tempLine=$(echo "${line}" | awk -F '<date>|</date>' ' { print $2 } ')
 				if [ -n "${tempLine}" ] ; then
-					echo "<tr><td>Download Date</td></tr>"  >> "${reportDirectory}/${hostname}.html" 
-					echo "<tr><td>${tempLine}</td></tr>" >> "${reportDirectory}/${hostname}.html" 
+					echo "<tr><td>Download Date</td></tr>"  >> "${reportDirectory}/${hostname}.html"
+					echo "<tr><td>${tempLine}</td></tr>" >> "${reportDirectory}/${hostname}.html"
 				fi
-				# echo "<tr>" >> "${reportDirectory}/${hostname}.html" |
 
 				tempLine=$(echo "${line}" | awk -F '<string>|</string>' ' { print $2 } ')
 				if [ -n "${tempLine}" ] ; then
-					echo "<tr><td>Download URL</td></tr>"  >> "${reportDirectory}/${hostname}.html" 
-					echo "<tr><td>${tempLine}</td></tr>" >> "${reportDirectory}/${hostname}.html" 
+					{
+						echo "<tr><td>Download URL</td></tr>"
+						echo "<tr><td>${tempLine}</td></tr>"
+						echo "<tr></tr>" 
+					} >> "${reportDirectory}/${hostname}.html"
 				fi
 
 			done < <((grep -A1 -E 'DownloadEntryURL|DownloadEntryDateAddedKey') < /tmp/Downloads.xml)
@@ -582,6 +647,8 @@ EOF
 			echo "Can't analyse Safari Downloads"
 		fi
 
+		# Database files must be copied to the local disk if transferred using a disk image/usb as these are read-only.
+		# Sqlite3 requires r/w access to query so they are copied to /tmp
 		if cp -R Browsers/Safari/History.db /tmp/ ; then
 			TMPFILES+=("/tmp/History.db")
 
@@ -591,7 +658,7 @@ EOF
 				echo "<th align=left>ID</th><th align=left>Date</th><th align=left>URL</th>"
 			}  >> "${reportDirectory}/Browser History.html"
 
-			
+			# Query History.db to get history item, id and timestamp
 			tempdb=$(sqlite3 /tmp/History.db "SELECT DISTINCT l.ID, l.url, r.visit_time FROM history_items l INNER JOIN history_visits r ON r.history_item = l.ID ORDER BY l.ID;" | sed 's/\|/ /g')
 
 			db=$(echo -e "${tempdb}\n")
@@ -603,8 +670,11 @@ EOF
 
 					id=$(echo "${line}" | awk -F " " ' { print $1 } ')
 
+					# Monitor the ID to prevent duplicate entries
 					if ! [[ "$prevID" -eq "$id" ]] ; then					
 						time=$(echo "${line}" | awk -F " " ' { print $3 } ' | cut -f1 -d".")
+						# Convert the time from Cocoa Core Data
+						# see: https://www.epochconverter.com/coredata
 						time=$((time+978307200))
 						date=$(date -r "${time}" +"%Y-%m-%dT%H:%M:%SZ")
 						url=$(echo "${line}" | awk -F " " ' { print $2 } ')
@@ -640,15 +710,17 @@ EOF
 
 				tempLine=$(echo "${line}" | awk -F ' ' ' { print $1" "$2" "$3" "$4" "$5} ')
 				if [ -n "${tempLine}" ] ; then
-					echo "<tr><td>Download Date</td></tr>"  >> "${reportDirectory}/${hostname}.html" 
-					echo "<tr><td>${tempLine}</td></tr>" >> "${reportDirectory}/${hostname}.html" 
+					echo "<tr><td>Download Date</td></tr>"  >> "${reportDirectory}/${hostname}.html"
+					echo "<tr><td>${tempLine}</td></tr>" >> "${reportDirectory}/${hostname}.html"
 				fi
-				# echo "<tr>" >> "${reportDirectory}/${hostname}.html" |
 
 				tempLine=$(echo "${line}" | awk -F ' ' ' { print $7 } ')
 				if [ -n "${tempLine}" ] ; then
-					echo "<tr><td>Download URL</td></tr>"  >> "${reportDirectory}/${hostname}.html" 
-					echo "<tr><td>${tempLine}</td></tr>" >> "${reportDirectory}/${hostname}.html" 
+					{
+						echo "<tr><td>Download URL</td></tr>"
+						echo "<tr><td>${tempLine}</td></tr>"
+						echo "<tr></tr>" 
+					} >> "${reportDirectory}/${hostname}.html"
 				fi
 
 			done < <((sqlite3 /tmp/History "SELECT last_modified, referrer  FROM downloads;" | sed 's/\|/ /g'))
@@ -672,8 +744,11 @@ EOF
 
 					id=$(echo "${line}" | awk -F "|" ' { print $1 } ')
 
+					# Monitor ID to prevent trying to parse a newline character or create duplicate entries
 					if ! [[ "${prevID}" -eq "${id}" ]] || [[ "${id}" == "\n" ]] ; then					
 						time=$(echo "${line}" | awk -F "|" ' { print $3 } ' | cut -f1 -d".")
+						# Convert time from WebKit/Chrome timestamp
+						# see: https://timothycomeau.com/writing/chrome-history and https://www.epochconverter.com/webkit
 						time=$(((time/1000000)-11644473600))
 						date=$(date -r "${time}" +"%Y-%m-%dT%H:%M:%SZ")
 						url=$(echo "${line}" | awk -F "|" ' { print $2 } ')
@@ -705,17 +780,19 @@ EOF
 
 				tempLine=$(echo "${line}" | awk -F '|' ' { print $1} ')
 				time=$((time/1000000))
-				date=$(date -r "${time}" +"%Y-%m-%dT%H:%M:%SZ")
+				date=$(date -r "${time}" +"%Y-%m-%dT%H:%M:%SZ" )
 				if [ -n "${tempLine}" ] ; then
-					echo "<tr><td>Download Date</td></tr>"  >> "${reportDirectory}/${hostname}.html" 
-					echo "<tr><td>${date}</td></tr>" >> "${reportDirectory}/${hostname}.html" 
+					echo "<tr><td>Download Date</td></tr>"  >> "${reportDirectory}/${hostname}.html"
+					echo "<tr><td>${date}</td></tr>" >> "${reportDirectory}/${hostname}.html"
 				fi
-				# echo "<tr>" >> "${reportDirectory}/${hostname}.html" |
 
 				tempLine=$(echo "${line}" | awk -F '|' ' { print $2 } ')
 				if [ -n "${tempLine}" ] ; then
-					echo "<tr><td>Download URL</td></tr>"  >> "${reportDirectory}/${hostname}.html" 
-					echo "<tr><td>${tempLine}</td></tr>" >> "${reportDirectory}/${hostname}.html" 
+					{
+						echo "<tr><td>Download URL</td></tr>"
+						echo "<tr><td>${tempLine}</td></tr>"
+						echo "<tr></tr>" 
+					} >> "${reportDirectory}/${hostname}.html"
 				fi
 
 			done < <((sqlite3 /tmp/places.sqlite "SELECT moz_annos.dateAdded,  moz_places.url FROM moz_places, moz_annos WHERE moz_places.id = moz_annos.place_id AND anno_attribute_id = 1;"))
@@ -777,12 +854,16 @@ EOF
 
 }
 
+# Print a list of files and their hashes to secondary PDF
 function print_files {
 
 	echo -e "\n${INFO}[*]${NC} Printing File Information"
 	echo "-------------------------------------------------------------------------------"
 
-	cat << EOF > "${reportDirectory}"/files.html
+	if [ -d Files/ ] ; then
+		
+
+	cat << EOF > "${reportDirectory}"/FileHashes.html
 
 	<!DOCTYPE html>
 
@@ -819,27 +900,31 @@ function print_files {
 EOF
 
 
-	while IFS=$'\n' read -r file ; do
-		
-		while IFS="$" read -r line ; do
+		while IFS=$'\n' read -r file ; do
+			
+			while IFS="$" read -r line ; do
 
-			{
-				echo "${line} " | awk -F '|' ' { print "<tr><td>" $1 "</td><td>" $2 "</td><td>" $3 "</td>" } '
-				temp=$(echo "${line} " | awk -F '|' ' { print $4 } ')
-				echo "${temp}" | awk -F ' /' ' { print "<td>" $1 "</td>"} '
-				echo "${temp}" | awk -F ' /' ' { print "<td>" $2 "</td></tr>"} '
-			}  >> "${reportDirectory}"/files.html
+				{
+					echo "${line} " | awk -F '|' ' { print "<tr><td>" $1 "</td><td>" $2 "</td><td>" $3 "</td>" } '
+					temp=$(echo "${line} " | awk -F '|' ' { print $4 } ')
+					echo "${temp}" | awk -F ' /' ' { print "<td>" $1 "</td>"} '
+					echo "${temp}" | awk -F ' /' ' { print "<td>" $2 "</td></tr>"} '
+				}  >> "${reportDirectory}"/FileHashes.html
 
-		done < <(cat -e "$file")
+			done < <(cat -e "$file")
 
-	done < <(find Files -type f -name "*.txt")
+		done < <(find ./Files/ -type f -name "*.txt")
 
-cat << EOF >> "${reportDirectory}"/files.html
+cat << EOF >> "${reportDirectory}"/FileHashes.html
 
 			</table>
 		</body>
 	</html>
 EOF
+	else 
+		echo "'Files' directory does not exist. Skipping..."
+			return 0
+	fi
 }
 
 function analyse_cron {
@@ -871,16 +956,27 @@ EOF
 	echo "<br><br><br>" >> "${reportDirectory}/${hostname}.html" 	
 }
 
+# Print Launch Agents/ Daemons
 function analyse_launch_agents {
 
 	echo -e "\n${INFO}[*]${NC} Printing Launch Agents"
 	echo "-------------------------------------------------------------------------------"
+
+	create_secondary_html "Launch Agents"
+	cat << EOF >> "${reportDirectory}/Launch Agents.html"
+
+
+	<h1> Launch Agents </h1>
+	<br>
+
+EOF
 
 	cat << EOF >> "${reportDirectory}/${hostname}.html" 
 
 
 	<h1 id="launchagents">Launch Agents</h1>
 	<br>
+	<i>The following contains a list of all Launch Agents for the device. Where the path begins with a username, the full path is /Users/[username]/Library/LaunchAgents/[Launch Agent]. The contents of the Launch Agents can be found in the PDF Launch Agents.pdf </i><br><br>
 
 EOF
 	mkdir -p /tmp/launch/
@@ -889,15 +985,19 @@ EOF
 
 	while IFS=$'\n' read -r path ; do 
 
-		{
-			echo "<b>${path}</b><br>"
+		tempPath="$(echo "${path}" | cut -d'/' -f 3-)" 
+
+		echo "${tempPath}<br>" >> "${reportDirectory}/${hostname}.html"	
+
+		{	
+			echo "<b>${tempPath}</b><br>"
 			echo "<pre>"
 			(sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4) < "${path}"
 			echo "</pre>"
 			echo "<br>"
-		} >> "${reportDirectory}/${hostname}.html" 
+		} >> "${reportDirectory}/Launch Agents.html" 
 
-	done < <(find Launch -name "*.plist" -print)
+	done < <(find Launch -name "*.plist" )
 
 	echo "<br><br><br>"   >> "${reportDirectory}/${hostname}.html" 		
 }
@@ -947,30 +1047,33 @@ EOF
 		echo "</pre><br>" >> "${reportDirectory}/${hostname}.html" 
 	fi
 
+	# Create database to show outgoing network connections
 	if [ -f Network/lsof.txt ] ; then
 
 		echo "<b  id='network/connections'>Network Connections</b><br>" >> "${reportDirectory}/${hostname}.html"  
 
+		# Create table to store process data
 		if sqlite3 /tmp/tmp.db "CREATE TABLE process(id INTEGER PRIMARY KEY AUTOINCREMENT, user TEXT, pid INTEGER, command TEXT);" ; then
 
 			TMPFILES+=("/tmp/tmp.db")
 
+			# Create table to store lsof data
 			if sqlite3 /tmp/tmp.db "CREATE TABLE lsof(id INTEGER PRIMARY KEY AUTOINCREMENT, command TEXT,  pid INTEGER, user TEXT, node TEXT, name TEXT);" ; then
 
 				while IFS=$'\n' read -r line; do
-	
+
+					# Extract and insert process data into database
 					user=$(echo "${line}" | cut -d ' ' -f 1)
 					pid=$(echo "${line}" | cut -d ' ' -f 2)
 					cmd=$(echo "${line}" | cut -d ' ' -f 3-)
-
-					# echo "${user}, ${pid}, ${cmd}"
 
 					sqlite3 /tmp/tmp.db  "INSERT INTO process (user, pid, command) VALUES (\"${user}\", \"${pid}\", \"${cmd}\");"
 						
 				done < <(cat Applications/processes.txt)
 
 				while IFS=$'\n' read -r line; do
-						
+					
+					# Extract and insert lsof data into database
 					user=$(echo "${line}" | cut -d ' ' -f 3)
 					pid=$(echo "${line}" | cut -d ' ' -f 2)
 					cmd=$(echo "${line}" | cut -d ' ' -f 1)
@@ -981,6 +1084,7 @@ EOF
 
 				done < <(tr -s ' ' < Network/lsof.txt  )
 
+				# Query constructed database to select data to show network connections and the processes that created them
 				db=$(sqlite3 /tmp/tmp.db "SELECT l.user, l.pid, r.node, r.name, l.command FROM process l INNER JOIN lsof r ON l.pid = r.pid;")
 
 				if ! IFS=$' ' read -rd '' -a y <<< "$db" ; then
@@ -993,12 +1097,15 @@ EOF
 						echo "<tr><th align=left>User</th><th align=left>PID</th><th align=left>Type</th><th align=left>Connection</th><th align=left>Command</th></tr>"
 					}  >> "${reportDirectory}/${hostname}.html" 
 
+					# Parse the network connections data
 					while IFS=$'\n' read -r line ; do
 
 						user=$(echo "${line}" | awk -F "|" ' { print $1 } ')
 						pid=$(echo "${line}" | awk -F "|" ' { print $2 } ')
 						node=$(echo "${line}" | awk -F "|" ' { print $3 } ')
 						name=$(echo "${line}" | awk -F "|" ' { print $4 } ' | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g')
+
+						# Shorten full paths to try and prevent them from going off page
 						command=$(echo "${line}" | awk -F "|" ' { print $5 } ' | sed 's;/System/Library/Frameworks/WebKit.framework;S/L/F/WK.f;g' | sed 's;/System/Library/PrivateFrameworks/WebKit.framework;S/L/PF/WK.f;g' | sed 's;/System/Library/PrivateFrameworks;S/L/PF;g')
 
 						echo "<tr><td>${user}</td><td>${pid}</td><td>${node}</td><td>${name}</td><td>${command}</td></tr>" >> "${reportDirectory}/${hostname}.html" 
@@ -1007,8 +1114,6 @@ EOF
 
 					echo "</table>"  >> "${reportDirectory}/${hostname}.html" 
 				fi
-
-			
 			fi
 		fi
 	fi
@@ -1016,6 +1121,7 @@ EOF
 	echo "<br><br><br>"   >> "${reportDirectory}/${hostname}.html" 
 }
 
+# Print user information
 function print_user {
 
 	echo -e "\n${INFO}[*]${NC} Printing User Information"
@@ -1028,10 +1134,9 @@ function print_user {
 	<br>
 
 EOF
-
+	
 	declare -a SUDOCOMMANDS
 	
-
 	if [ -d User ] ; then 
 		if [ -f User/users.txt ]; then
 		
@@ -1081,15 +1186,20 @@ EOF
 		{
 			echo "<h1 id='commands'>Command History</h1><br>"
 			echo "<i>The following contains a list of commands ran by the root user. There is also a list of other command run by other users containing 'sudo'.<br>" 
-			echo "A list of all commands run by each user can be found in 'User Command History.pdf'.</i><br><br>"
+			echo "A list of all commands run by each user can be found in 'Command History.pdf'.</i><br><br>"
 		} >> "${reportDirectory}/${hostname}.html"
 
+		# Print shell history for each user. Supports bash and zsh currently
 		for dir in User/*/ ; do
 
 			if ! [[ "${dir}" == "User/daemon/"  ||  "${dir}" == "User/nobody/" ]] ; then
 				user=$(echo "${dir}" | awk -F '/' ' { print $2 } ')
+
+				# Print root command history
+				# Seperate from other users as this is more of a security risk and is printed to the main PDF
 				if [[ "${dir}" == "User/root/" ]] ; then
 
+					# Print rootbash history
 					if [ -f "${dir}/.bash_history" ] ; then
 
 						echo "<b> ${user} - Bash History </b> " >> "${reportDirectory}/${hostname}.html"
@@ -1098,6 +1208,7 @@ EOF
 							{
 								echo "<pre>"
 								echo "${line}" | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4
+								echo "</pre>"
 							} >> "${reportDirectory}/${hostname}.html"
 
 						done < <(cat "${dir}/.bash_history")
@@ -1105,6 +1216,7 @@ EOF
 						echo "</pre><br>" >> "${reportDirectory}/${hostname}.html"
 					fi
 
+					# Print root zsh history
 					if [ -f "${dir}/.zsh_history" ] ; then
 
 						echo "<b>${user} - Zsh History </b>">> "${reportDirectory}/${hostname}.html"
@@ -1114,17 +1226,19 @@ EOF
 
 							if [[ ${tmp} =~ ^[0-9]+$ ]] ; then
 								
-								cmdDate=$(date -r "${tmp}" +"%Y-%m-%dT%H:%M:%SZ")
+								cmdDate=$(date -r "${tmp}" +"%Y-%m-%dT%H:%M:%SZ" )
 								command=$(echo "${line}" | cut -d ';' -f 2 | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g')
 
 								{
 									echo "<pre>"
 									echo "${cmdDate}  --  ${command}"
+									echo "</pre>"
 								} >> "${reportDirectory}/${hostname}.html"
 							else
 								{
 									echo "<pre>"
 									echo "${line}"
+									echo "</pre>"
 								} >> "${reportDirectory}/${hostname}.html"
 
 							fi
@@ -1133,57 +1247,65 @@ EOF
 						echo "</pre><br>" >> "${reportDirectory}/${hostname}.html"
 					fi
 				else
-					#CHECK IF LINE CONTAINS SUDO, IF SO MAKE RED
+
+					# Print the remainder of the user command history to seperate PDF
 					if [ -f "${dir}/.bash_history" ] ; then
 
-						if ! [ -f "${reportDirectory}/User Command History.html" ] ; then
-							create_secondary_html "User Command History"
+						if ! [ -f "${reportDirectory}/Command History.html" ] ; then
+							create_secondary_html "Command History"
 						fi
 
-						echo "<b> ${user} - Bash History </b> " >> "${reportDirectory}/User Command History.html"
+						echo "<b> ${user} - Bash History </b> " >> "${reportDirectory}/Command History.html"
 						while IFS=$'\n' read -r line ; do 
 
+							# Filter for commands with 'sudo'
 							if echo "${line}" | grep -c 'sudo' >> /dev/null; then
+									# sudo found. Print to main PDF file.
 									SUDOCOMMANDS+=("${line}")
 							fi
 
 							{
 								echo "<pre>"
 								echo "${line}" | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g' | expand -t4
-							} >> "${reportDirectory}/User Command History.html"
+								echo "</pre>"
+							} >> "${reportDirectory}/Command History.html"
 
 						done < <(cat "${dir}/.bash_history")
 
 						write_sudo_commands "${user}" "bash"
 
-						echo "</pre><br>" >> "${reportDirectory}/User Command History.html"
+						echo "</pre><br>" >> "${reportDirectory}/Command History.html"
 					fi
 
 					if [ -f "${dir}/.zsh_history" ] ; then
 
-						echo "<b>${user} - Zsh History </b>" >> "${reportDirectory}/User Command History.html"
+						echo "<b>${user} - Zsh History </b>" >> "${reportDirectory}/Command History.html"
 						while IFS=$'\n' read -r line ; do 
 
 							tmp=$(echo "${line}" | cut -d ':' -f 2 | tr -d '[:blank:]')
 
 							if [[ ${tmp} =~ ^[0-9]+$ ]] ; then
 								
-								cmdDate=$(date -r "${tmp}" +"%Y-%m-%dT%H:%M:%SZ")
+								cmdDate=$(date -r "${tmp}" +"%Y-%m-%dT%H:%M:%SZ" )
 								command=$(echo "${line}" | cut -d ';' -f 2 | sed 's/\</\&lt;/g' | sed 's/\>/\&gt;/g')
 
 								if echo "${command}" | grep -c 'sudo'  >> /dev/null ; then
+
+									# sudo found. Print to main PDF file.
 									SUDOCOMMANDS+=("${command}")
 								fi
 
 								{
 									echo "<pre>"
 									echo "${cmdDate}  --  ${command}"
-								} >> "${reportDirectory}/User Command History.html"
+									echo "</pre>"
+								} >> "${reportDirectory}/Command History.html"
 							else
 								{
 									echo "<pre>"
 									echo "${line}"
-								} >> "${reportDirectory}/User Command History.html"
+									echo "</pre>"
+								} >> "${reportDirectory}/Command History.html"
 
 							fi
 							
@@ -1191,7 +1313,7 @@ EOF
 
 						write_sudo_commands "${user}" "Zsh"
 
-						echo "</pre><br>" >> "${reportDirectory}/User Command History.html"
+						echo "</pre><br>" >> "${reportDirectory}/Command History.html"
 
 					fi
 				fi
@@ -1205,6 +1327,7 @@ EOF
 EOF
 }
 
+# Print sudo commands to main PDF file
 function write_sudo_commands {
 	
 	user="$1"
@@ -1213,12 +1336,14 @@ function write_sudo_commands {
 	if [ "${#SUDOCOMMANDS[@]}" -gt 0 ] ; then
 
 		{	
-			echo "<pre>"
+			
 			echo "<b>${user} ${shell} Sudo Commands</b><br><br>"
 			for c in "${SUDOCOMMANDS[@]}" ; do
+				echo "<pre>"
 				echo "${c}"
+				echo "</pre>"
 			done
-			echo "</pre><br><br>"
+			echo "<br><br>"
 		} >> "${reportDirectory}/${hostname}.html"
 	fi
 	
@@ -1226,6 +1351,7 @@ function write_sudo_commands {
 
 }
 
+# Extract sysdiagnose
 function parse_sysdiagnose {
 	
 	echo -e "\n${INFO}[*]${NC} Parsing sysdiagnose"
@@ -1246,20 +1372,23 @@ function parse_sysdiagnose {
 	if [[ -n "${archive}" ]] ; then
 
 		if tar -xf "${archive}" -C /tmp/sysdiagnose ; then
-			echo "Extracted"
+			echo "${PASS}[+]${NC} Successfully extracted sysdiagnose to /tmp/sysdiagnose..."
 			cd /tmp/sysdiagnose/"${archive%.tar.gz}" || exit
 		else
-			echo "Failed"
+			echo "${WARN}[!]${NC} Failed to extract sysdiagnose..."
 		fi
 	else
-		echo "SYSDIAGNOSE NOT FOUND"
+		echo "${WARN}[!]${NC} sysdiagnose not found..."
 	fi
 }
 
+# Cleanup function.
+# Delete any of the temporary files that were copied to /tmp/
 function cleanup {
 
 	echo -e "\n${INFO}[*]${NC} Performing Cleanup"
 	echo "-------------------------------------------------------------------------------"
+	set +u
 
 	declare -a TMPFAILED
 
@@ -1278,8 +1407,11 @@ function cleanup {
 	else
 		echo "Completed Cleanup. All done."
 	fi 
+
+	set -u
 }
 
+# Decrypt the data received from netcat 
 function decrypt {
 	
 	local passphrase
@@ -1295,9 +1427,6 @@ function decrypt {
 
  		if openssl enc -d -aes256 -in "${tarFile}" -pass pass:"${passphrase}" | tar xz  ; then
  			echo "${PASS}[+]${NC} Successfully decrypted .tar to directory: ~/output."
- 			echo "before $PWD"
- 			#cd ~/output
- 			echo "after $PWD"
  			break
  		else
  			echo "${WARN}[!]${NC} Failed to decrypt .tar. Please enter new passphrase or 'q' to exit..."
@@ -1306,6 +1435,7 @@ function decrypt {
   	done
 }
 
+# Receive data over the network using netcat
 function network {
 	local port
 	local passphrase
@@ -1335,7 +1465,8 @@ function network {
 	fi 
 }
 
-function disk {
+# Extract the data from a disk image
+function localDisk {
 	
 	local diskName
 	local tarFile
@@ -1343,12 +1474,12 @@ function disk {
 
 	diskName="$1"
 
-	if "${diskName}" == "None" ; then
+	if [[ "${diskName}" == "none" ]] ; then
 		echo "FAIL. Please enter a disk name..."
 		exit 1
 	fi
 
-	volume=$(echo "$diskName" | awk -F '/' ' { print $3 }')
+	volume=$(echo "$diskName" | awk -F '/' ' { print $(NF-1) }')
 
 	echo "${INFO}[*]${NC} Checking disk. Please enter the passphrase..."
 	read -rp 'Passphrase: ' passphrase
@@ -1365,6 +1496,7 @@ function disk {
 	fi
 }
 
+# Extract the data from a usb
 function usb {
 	
 	local usbName
@@ -1398,6 +1530,8 @@ function usb {
 	fi
 }
 
+# Convert the reports from html to PDF using wkhtmltopdf
+# see: https://wkhtmltopdf.org/
 function generate_reports {
 
 	echo -e "\n${INFO}[*]${NC} Generating Reports"
@@ -1407,8 +1541,9 @@ function generate_reports {
 
 	while IFS=$'\n' read -r line; do
 
-		if [[ "${line}" == "files.html" ]] ; then
-			wkhtmltopdf -q -O landscape files.html files.pdf
+		if [[ "${line}" == "FileHashes.html" ]] ; then
+			# Due to the length of some paths, the FileHashes.pdf file is landscape to make room.
+			wkhtmltopdf -q -O landscape FileHashes.html FileHashes.pdf
 		else 
 			wkhtmltopdf -q --print-media-type "${line}" "${line%.html}.pdf"
 		fi
@@ -1418,6 +1553,7 @@ function generate_reports {
 	echo "Reports generated. These can be found at /tmp/Reports/"
 }
 
+# ctrl-c hit. Cleanup.
 function control_c {
 
 	echo -e "\n${FAIL}[X]${NC} Ctrl-C hit. Cleaning up..."
@@ -1426,50 +1562,14 @@ function control_c {
 	exit 1
 }
 
-function install_tools {
-
-	echo -e "\n${INFO}[*]${NC} Installing XCode Tools"
-	echo "-------------------------------------------------------------------------------"
-
-	if xcode-select --install  2> /dev/null | grep -q 'install requested'; then
-		echo "XCode Tools must be installed. Please follow the opened dialog and then re-run on completion."
-		exit 1
-	else
-		echo "XCode Tools already installed."
-	fi
-
-	echo -e "\n${INFO}[*]${NC} Installing brew"
-	echo "-------------------------------------------------------------------------------"
-	#Install requirements for analysis. This will install XCode Tools alongside others.
-
-	if ! [[ "$(command -v brew)" > /dev/null ]] ; then
-
-		if /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" ; then
-			echo "Homebrew installed!"
-		else
-			echo "Failed to install Homebrew..."
-			exit 1
-		fi
-	fi
-	echo "Homebrew installed!"
-	echo "update"
-	brew update
-
-	echo "upgrade"
-	brew upgrade
-
-	echo "bundle"
-	brew bundle
-	
-}
-
 function analysis {
 
+	# Capture ctrl-c keypress and cleanup
 	trap control_c SIGINT
 	
 	hostname=$(find . -name "*-shasum.txt" -print | cut -d '-' -f 1 | tr -d './')
 
-	reportDirectory="/tmp/Report/${hostname}"
+	reportDirectory="/tmp/Report/${hostname} $(date -u +"%Y-%m-%dT%H-%M-%SZ")"
 
 	check_hash
 
@@ -1494,22 +1594,21 @@ function analysis {
 
 	cleanup
 
-	open "${reportDirectory}/${hostname}.pdf"
+	open "${reportDirectory}/"
 }
 
 function main {
 
-	install_tools
+	trap control_c SIGINT
 
 	while getopts ":hdnui" opt; do
 		case ${opt} in
 			h ) usage
 				;;
-			d ) local diskImage=${2:-"none"}; disk "${diskImage}"
+			d ) local diskImage=${2:-"none"}; localDisk "${diskImage}"
 				analysis
 				;;
 			n ) local port=${2:-"none"}; network "${port}"
-				echo "$PWD"
 				analysis
 				;;
 			u ) local disk=${2:-"none"}; usb "${disk}"
