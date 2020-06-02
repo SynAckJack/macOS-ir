@@ -1,0 +1,42 @@
+name: Shellcheck Lint
+
+on:
+  push:
+    branches:
+      # Run workflow on push to both brances
+      - master
+      - wip
+
+  pull_request:
+    branches: 
+      # Run workflow on pull request to both master and wip
+      - master
+      - wip
+
+jobs:
+  build:
+    name: Shellcheck Lint
+    
+    # This job runs on Linux
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Required to access files of this repository
+      - uses: actions/checkout@v2          
+        
+      # Download Shellcheck and add it to the workflow path
+      - name: Download Shellcheck
+        run: | 
+          wget -qO- "https://github.com/koalaman/shellcheck/releases/download/stable/shellcheck-stable.linux.x86_64.tar.xz" | tar -xJv
+          echo "::add-path::shellcheck-stable/"
+          chmod +x shellcheck-stable/shellcheck
+      # Verify that Shellcheck can be executed
+      - name: Check Shellcheck Version
+        run: |
+          shellcheck --version
+      
+      # Execute lint.sh to run Shellcheck on repository
+      - name: Execute test
+        run: |
+          chmod +x lint.sh
+          ./lint.sh
