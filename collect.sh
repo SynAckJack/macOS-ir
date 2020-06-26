@@ -15,7 +15,6 @@ WARN=$(echo -en '\033[1;33m')
 
 # Internal Field Seperator
 IFS=$'\n'
-
 # Declare global arrays
 declare -a LOGS
 declare -a USERS
