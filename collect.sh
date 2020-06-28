@@ -671,9 +671,21 @@ function check_sudo {
 
 }
 
+function check_fda {
+
+	echo -e "${INFO}[*]${NC} Checking if Terminal.app has FDA..."
+	if  file /Library/Application\ Support/com.apple.tcc/TCC.db | grep -q 'Operation' ; then
+		echo -e "${FAIL}[-]${NC} Terminal.app does not have FDA."
+		echo -e "    To enable FDA: System Preferences > Security and Privacy > Privacy > Full Disk Access."
+		exit 1
+	fi
+}
+
 function main {
 
 	check_sudo
+
+	check_fda
 
 	SKIP=${2:-"false"}
 
