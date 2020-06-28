@@ -7,11 +7,10 @@
 set -euo pipefail
 
 # Colours for output
-FAIL=$(echo -en '\033[01;31m')
-PASS=$(echo -en '\033[01;32m')
-NC=$(echo -en '\033[0m')
-INFO=$(echo -en '\033[01;35m')
-WARN=$(echo -en '\033[1;33m')
+FAIL=$(echo -en '\033[01;31m[-]\033[0m')
+PASS=$(echo -en '\033[01;32m[+]\033[0m')
+INFO=$(echo -en '\033[01;35m[*]\033[0m')
+WARN=$(echo -en '\033[1;33m[!]\033[0m')
 
 # Internal Field Seperator
 IFS=$'\n'
@@ -40,7 +39,7 @@ function log {
 # Verify integrity of received files. 
 function check_hash {
 
-	echo -e "\n${INFO}[*]${NC} Checking shasum of files"
+	echo -e "\n${INFO} Checking shasum of files"
 	echo "-------------------------------------------------------------------------------"
 
 	local shafile
@@ -238,7 +237,7 @@ EOF
 # Parse the system information
 function analyse_sysinfo {
 	
-	echo -e "\n${INFO}[*]${NC} Analysing sysinfo"
+	echo -e "\n${INFO} Analysing sysinfo"
 	echo "-------------------------------------------------------------------------------"
 
 	read_file "systeminfo.txt"
@@ -293,7 +292,7 @@ function analyse_security {
 
 	unset "LINES[@]"
 
-	echo -e "\n${INFO}[*]${NC} Analysing security"
+	echo -e "\n${INFO} Analysing security"
 	echo "-------------------------------------------------------------------------------"
 
 	read_file "security.txt"
@@ -383,7 +382,7 @@ EOF
 
 function analyse_applications {
 
-	echo -e "\n${INFO}[*]${NC} Analysing applications"
+	echo -e "\n${INFO} Analysing applications"
 	echo "-------------------------------------------------------------------------------"
 
 
@@ -452,7 +451,7 @@ EOF
 # Not much handling needs done here as it was filtered at time of collection
 function analyse_install_history {
 
-	echo -e "\n${INFO}[*]${NC} Analysing install history"
+	echo -e "\n${INFO} Analysing install history"
 	echo "-------------------------------------------------------------------------------"
 
 	cat << EOF >> "${reportDirectory}/${hostname}.html"
@@ -476,7 +475,7 @@ echo "</table><br><br><br>"  >> "${reportDirectory}/${hostname}.html"
 # Print the hash of the executables
 function print_hash {
 
-	echo -e "\n${INFO}[*]${NC} Printing Executable Hashes"
+	echo -e "\n${INFO} Printing Executable Hashes"
 	echo "-------------------------------------------------------------------------------"
 
 	create_secondary_html "Hash of Executables"
@@ -515,7 +514,7 @@ EOF
 # Print only unsigned .apps to the main PDF. Otherwise print to a secondary file
 function print_signing {
 
-	echo -e "\n${INFO}[*]${NC} Printing Non-Signed Applications"
+	echo -e "\n${INFO} Printing Non-Signed Applications"
 	echo "-------------------------------------------------------------------------------"
 
 	cat << EOF >> "${reportDirectory}/${hostname}.html"
@@ -591,7 +590,7 @@ EOF
 # Extract data from the history and download files for each browser
 function analyse_browser {
 
-	echo -e "\n${INFO}[*]${NC} Analysing Browsers"
+	echo -e "\n${INFO} Analysing Browsers"
 	echo "-------------------------------------------------------------------------------"
 
 	cat << EOF >> "${reportDirectory}/${hostname}.html" 
@@ -832,7 +831,7 @@ EOF
 
 function print_disk {
 
-	echo -e "\n${INFO}[*]${NC} Printing Disk Information"
+	echo -e "\n${INFO} Printing Disk Information"
 	echo "-------------------------------------------------------------------------------"
 
 	cat << EOF >> "${reportDirectory}/${hostname}.html" 
@@ -857,7 +856,7 @@ EOF
 # Print a list of files and their hashes to secondary PDF
 function print_files {
 
-	echo -e "\n${INFO}[*]${NC} Printing File Information"
+	echo -e "\n${INFO} Printing File Information"
 	echo "-------------------------------------------------------------------------------"
 
 	if [ -d Files/ ] ; then
@@ -929,7 +928,7 @@ EOF
 
 function analyse_cron {
 
-	echo -e "\n${INFO}[*]${NC} Printing Cron Jobs"
+	echo -e "\n${INFO} Printing Cron Jobs"
 	echo "-------------------------------------------------------------------------------"
 
 	cat << EOF >> "${reportDirectory}/${hostname}.html" 
@@ -959,7 +958,7 @@ EOF
 # Print Launch Agents/ Daemons
 function analyse_launch_agents {
 
-	echo -e "\n${INFO}[*]${NC} Printing Launch Agents"
+	echo -e "\n${INFO} Printing Launch Agents"
 	echo "-------------------------------------------------------------------------------"
 
 	create_secondary_html "Launch Agents"
@@ -1004,7 +1003,7 @@ EOF
 
 function print_networking {
 
-	echo -e "\n${INFO}[*]${NC} Printing Network Information"
+	echo -e "\n${INFO} Printing Network Information"
 	echo "-------------------------------------------------------------------------------"
 
 	cat << EOF >> "${reportDirectory}/${hostname}.html" 
@@ -1124,7 +1123,7 @@ EOF
 # Print user information
 function print_user {
 
-	echo -e "\n${INFO}[*]${NC} Printing User Information"
+	echo -e "\n${INFO} Printing User Information"
 	echo "-------------------------------------------------------------------------------"
 
 	cat << EOF >> "${reportDirectory}/${hostname}.html"
@@ -1354,11 +1353,11 @@ function write_sudo_commands {
 # Extract sysdiagnose
 function parse_sysdiagnose {
 	
-	echo -e "\n${INFO}[*]${NC} Parsing sysdiagnose"
+	echo -e "\n${INFO} Parsing sysdiagnose"
 	echo "-------------------------------------------------------------------------------"
 
 	if ! mkdir -p "/tmp/sysdiagnose" ; then
-		echo "${FAIL}[-]${NC} Couldn't make extract directory. Exiting..."
+		echo "${FAIL} Couldn't make extract directory. Exiting..."
 		exit 1
 	fi
 
@@ -1372,13 +1371,13 @@ function parse_sysdiagnose {
 	if [[ -n "${archive}" ]] ; then
 
 		if tar -xf "${archive}" -C /tmp/sysdiagnose ; then
-			echo "${PASS}[+]${NC} Successfully extracted sysdiagnose to /tmp/sysdiagnose..."
+			echo "${PASS} Successfully extracted sysdiagnose to /tmp/sysdiagnose..."
 			cd /tmp/sysdiagnose/"${archive%.tar.gz}" || exit
 		else
-			echo "${WARN}[!]${NC} Failed to extract sysdiagnose..."
+			echo "${WARN} Failed to extract sysdiagnose..."
 		fi
 	else
-		echo "${WARN}[!]${NC} sysdiagnose not found..."
+		echo "${WARN} sysdiagnose not found..."
 	fi
 }
 
@@ -1386,7 +1385,7 @@ function parse_sysdiagnose {
 # Delete any of the temporary files that were copied to /tmp/
 function cleanup {
 
-	echo -e "\n${INFO}[*]${NC} Performing Cleanup"
+	echo -e "\n${INFO} Performing Cleanup"
 	echo "-------------------------------------------------------------------------------"
 	set +u
 
@@ -1419,17 +1418,17 @@ function decrypt {
 
 	tarFile=$(find . -name '*.tar' )	
 
-	echo "${INFO}[*]${NC} Decrypting .tar file. Please enter passphrase: "
+	echo "${INFO} Decrypting .tar file. Please enter passphrase: "
 	read -rp 'Passphrase: ' passphrase
  	
  	while [ "${passphrase}" != "q" ] ; do
  		echo "Attempting to decrypt with: ${passphrase}..."
 
  		if openssl enc -d -aes256 -in "${tarFile}" -pass pass:"${passphrase}" | tar xz  ; then
- 			echo "${PASS}[+]${NC} Successfully decrypted .tar to directory: ~/output."
+ 			echo "${PASS} Successfully decrypted .tar to directory: ~/output."
  			break
  		else
- 			echo "${WARN}[!]${NC} Failed to decrypt .tar. Please enter new passphrase or 'q' to exit..."
+ 			echo "${WARN} Failed to decrypt .tar. Please enter new passphrase or 'q' to exit..."
  			read -rp 'Passphrase: ' passphrase
  		fi
   	done
@@ -1440,7 +1439,7 @@ function network {
 	local port
 	local passphrase
 
-	echo "${INFO}[*]${NC} Checking valid port..."
+	echo "${INFO} Checking valid port..."
 
 	port=${1}
 
@@ -1448,19 +1447,19 @@ function network {
 		
 		mkdir -p ~/output && cd ~/output
 
-		echo "${INFO}[*]${NC} Connecting to nc on port ${port}..."
+		echo "${INFO} Connecting to nc on port ${port}..."
 
 		if nc -l "${port}" > received.tar; then
-			echo "${PASS}[+]${NC} Successfully received data."
+			echo "${PASS} Successfully received data."
 
 			decrypt
 		else
-			echo "${FAIL}[-]${NC} Failed to receive data. Exiting..."
+			echo "${FAIL} Failed to receive data. Exiting..."
 			exit 1
 		fi
 
 	else
-		echo "${FAIL}[-]${NC} Please enter a valid port. Exiting..."
+		echo "${FAIL} Please enter a valid port. Exiting..."
 		exit 1
 	fi 
 }
@@ -1481,16 +1480,16 @@ function localDisk {
 
 	volume=$(echo "$diskName" | awk -F '/' ' { print $(NF-1) }')
 
-	echo "${INFO}[*]${NC} Checking disk. Please enter the passphrase..."
+	echo "${INFO} Checking disk. Please enter the passphrase..."
 	read -rp 'Passphrase: ' passphrase
 
 	if echo -n "${passphrase}" | hdiutil attach "${diskName}" -stdinpass  ; then
-		echo "${PASS}[+]${NC} Succesfully attached disk."
+		echo "${PASS} Succesfully attached disk."
 		cd "/Volumes/${volume}"
 
 		log "PASS" "Disk mounted"
 	else
-		echo "${FAIL}[-]${NC} Incorrect passphrase. Exiting..."
+		echo "${FAIL} Incorrect passphrase. Exiting..."
 		log "ERROR" "Disk mount failed"
 		exit 1
 	fi
@@ -1505,27 +1504,27 @@ function usb {
 
 	usbName="$1"
 
-	echo "${INFO}[*]${NC} Checking USB. Please enter the passphrase..."
+	echo "${INFO} Checking USB. Please enter the passphrase..."
 	read -rp 'Passphrase: ' passphrase
  
 	if diskutil apfs unlockVolume "${usbName}" -passphrase "${passphrase}"; then
 
 		if cd /Volumes/"${usbName}" ; then
-			echo "${PASS}[+]${NC} USB exists and is available. Locating .tar..."
+			echo "${PASS} USB exists and is available. Locating .tar..."
 			mkdir -p ~/output
 			if tar -xvf output.tar -C ~/output ; then
-				echo "${PASS}[+]${NC} .tar extracted to 'output' successfully..."
+				echo "${PASS} .tar extracted to 'output' successfully..."
 				cd ~/output
 			else
-				echo "${WARN}[!]${NC} Failed to extract .tar. Exiting..."
+				echo "${WARN} Failed to extract .tar. Exiting..."
 				exit 1
 			fi	
 		else
-			echo "${FAIL}[-]${NC} Unable to access USB. Exiting..."
+			echo "${FAIL} Unable to access USB. Exiting..."
 			exit 1
 		fi
 	else
-		echo "${FAIL}[-]${NC} Incorrect passphrase. Exiting..."
+		echo "${FAIL} Incorrect passphrase. Exiting..."
 		exit 1
 	fi
 }
@@ -1534,7 +1533,7 @@ function usb {
 # see: https://wkhtmltopdf.org/
 function generate_reports {
 
-	echo -e "\n${INFO}[*]${NC} Generating Reports"
+	echo -e "\n${INFO} Generating Reports"
 	echo "-------------------------------------------------------------------------------"
 
 	cd /tmp/Report || exit

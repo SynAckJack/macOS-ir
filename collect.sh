@@ -7,11 +7,10 @@
 set -euo pipefail
 
 # Colours for output
-FAIL=$(echo -en '\033[01;31m')
-PASS=$(echo -en '\033[01;32m')
-NC=$(echo -en '\033[0m')
-INFO=$(echo -en '\033[01;35m')
-WARN=$(echo -en '\033[1;33m')
+FAIL=$(echo -en '\033[01;31m[-]\033[0m')
+PASS=$(echo -en '\033[01;32m[+]\033[0m')
+INFO=$(echo -en '\033[01;35m[*]\033[0m')
+WARN=$(echo -en '\033[1;33m[!]\033[0m')
 
 # Internal Field Seperator
 IFS=$'\n'
@@ -85,7 +84,7 @@ function cLaunch {
 	echo "-------------------------------------------------------------------------------"
 
 	if ! mkdir -p "Launch" ; then
-		echo "${FAIL}[-]${NC} Couldn't make Launch directory. Exiting..."
+		echo "${FAIL} Couldn't make Launch directory. Exiting..."
 		exit 1
 	fi
 
@@ -170,7 +169,7 @@ function cFiles {
 		mkdir "FSEvents"
 
 		if ! sudo cp -r /.fseventsd/ FSEvents/ ; then
-			echo "${WARN}[!]${NC} Couldn't copy fseventsd folder..." 
+			echo "${WARN} Couldn't copy fseventsd folder..." 
 		fi
 	else
 		echo "SKIP set. Skipping...."
@@ -192,7 +191,7 @@ function cSysdiagnose {
 function cUser {
 
 	if ! mkdir "User" ; then
-		echo "${FAIL}[-]${NC} Couldn't make User directory. Exiting..."
+		echo "${FAIL} Couldn't make User directory. Exiting..."
 		exit 1
 	fi
 
@@ -237,7 +236,7 @@ function cApplication {
 	declare -a APPLICATIONS
 
 	if ! mkdir "Applications" ; then
-		echo "${FAIL}[-]${NC} Couldn't make disk directory. Exiting..."
+		echo "${FAIL} Couldn't make disk directory. Exiting..."
 		exit 1
 	fi	
 
@@ -401,7 +400,7 @@ function cNetworkInfo {
 function cDiskInfo {
 
 	if ! mkdir "disk" ; then
-		echo "${FAIL}[-]${NC} Couldn't make disk directory. Exiting..."
+		echo "${FAIL} Couldn't make disk directory. Exiting..."
 		exit 1
 	fi
 
@@ -416,7 +415,7 @@ function collect {
 
 	local lHostName
 	
-	echo "${INFO}[*]${NC} Started collection...Writing to collect.log"
+	echo "${INFO} Started collection...Writing to collect.log"
 	log "INFO" "Started Collection"
 
 	lHostName="$(scutil --get LocalHostName)"
@@ -461,7 +460,7 @@ function localDisk {
 		# Generate random directory name
 		directory="$HOME/$(head -c24 < /dev/urandom | base64 | tr -cd '[:alnum:]')"
 
-		echo "${INFO}[*]${NC} Creating directory at ${directory}"
+		echo "${INFO} Creating directory at ${directory}"
 		log "INFO" "Started 'disk'"
 
 		if [[ ! -e "$directory" ]] ; then
@@ -471,7 +470,7 @@ function localDisk {
 
 			collect "${SKIP}"
 
-			echo "${INFO}[*]${NC} Collected data. Creating disk image..."
+			echo "${INFO} Collected data. Creating disk image..."
 			log "INFO" "Creating disk image"
 
 			# Create disk image based on the size of the generated directory
@@ -481,31 +480,31 @@ function localDisk {
 			# Generate random passphrase
 			passphrase=$(head -c24 < /dev/urandom | base64 | tr -cd '[:alnum:]')
 
-			echo "${INFO}[*]${NC} Performing shasum of files..."
+			echo "${INFO} Performing shasum of files..."
 				log "INFO" "Shasum started"
 
 				# Perform shasum of all generated files. Allows for integrity check.
 				if find . -type f -exec shasum -a 256 '{}' \; >> "${lHostName}"-shasum.txt ; then
-					echo "${PASS}[+]${NC} shasum completed. Stored in: ${lHostName}-shasum.txt"
+					echo "${PASS} shasum completed. Stored in: ${lHostName}-shasum.txt"
 					log "PASS" "shasum completed"
 				else
-					echo "${WARN}[!]${NC} shasum failed. Continuing..."
+					echo "${WARN} shasum failed. Continuing..."
 					log "WARNING" "shasum failed"
 				fi
 
 			# Create disk image
 			if echo -n "${passphrase}" | hdiutil create -fs apfs -size "${dirSize}"kb -format UDRW -stdinpass -encryption AES-128 -srcfolder "${directory}" "${directory}/output".dmg  ; then
-				echo "${PASS}[+]${NC} Succesfully created disk image with data at ${directory}/output.dmg."
+				echo "${PASS} Succesfully created disk image with data at ${directory}/output.dmg."
 				log "PASS" "Disk image created. Directory: ${directory}, Passphrase: ${passphrase}"
-				echo "${INFO}[*]${NC} Passphrase for image: ${passphrase}"
+				echo "${INFO} Passphrase for image: ${passphrase}"
 			else
-				echo "${FAIL}[-]${NC} Failed to create disk image. Exiting..."
+				echo "${FAIL} Failed to create disk image. Exiting..."
 				log "ERROR" "Disk image creation failed"
 				exit 1
 			fi
 			
 		else 
-			echo "${FAIL}[-]${NC} $(directory) already exists. Exiting..."
+			echo "${FAIL} $(directory) already exists. Exiting..."
 			log "ERROR" "${directory} exists"
 			exit 1
 		fi
@@ -518,15 +517,15 @@ function usb {
 	log "INFO" "Started 'usb'"
 	if [ ! "${disk}" == "none" ] ; then
 
-		echo "${INFO}[*]${NC} Checking disk ${disk}..."
+		echo "${INFO} Checking disk ${disk}..."
 		log "INFO" "Validating USB"
 
 		# Validate that usb exists
 		if [[ -e /Volumes/"${disk}" ]] ; then
 			# Warn user that drive will be erased
-			echo "${WARN}[!]${NC} Continuing will erase this disk, proceeding in 5 seconds..."
+			echo "${WARN} Continuing will erase this disk, proceeding in 5 seconds..."
 			sleep 5
-			echo "${PASS}[+]${NC} Continuing..."
+			echo "${PASS} Continuing..."
 
 			passphrase="$(head -c24 < /dev/urandom | base64 | tr -cd '[:alnum:]')"
 
@@ -534,40 +533,40 @@ function usb {
 			if diskutil apfs eraseVolume "${disk}" -name "${disk}" -passphrase "${passphrase}" >>/dev/null  ; then
 				lHostName="$(scutil --get LocalHostName)"
 
-				echo "${INFO}[*]${NC} Disk erased. Passphrase: ${passphrase}"
+				echo "${INFO} Disk erased. Passphrase: ${passphrase}"
 				log "INFO" "USB prepared. Passphrase: ${passphrase}"
 
 				collect "${SKIP}"
 
-				echo "${INFO}[*]${NC} Performing shasum of files..."
+				echo "${INFO} Performing shasum of files..."
 				log "INFO" "Shasum started"
 
 				if find . -type f -exec shasum -a 256 '{}' \; >> "${lHostName}"-shasum.txt ; then
-					echo "${PASS}[+]${NC} Shasum complete. Stored in: ${lHostName}-shasum.txt"
+					echo "${PASS} Shasum complete. Stored in: ${lHostName}-shasum.txt"
 					log "PASS" "Shasum completed"
 				else
-					echo "${WARN}[!]${NC} Shasum failed. Continuing..."
+					echo "${WARN} Shasum failed. Continuing..."
 					log "WARNING" "Shasum failed"
 				fi
 
 				# Compress collected data to a tar on usb
 				if tar cvf /Volumes/"${disk}"/output.tar ./* > /dev/null 2>&1 ; then
-					echo "${PASS}[+]${NC} Data successfully copied..."
+					echo "${PASS} Data successfully copied..."
 					log "PASS" "Data copied to USB successfully"
 				else
-					echo "${FAIL}[-]${NC} Failed to copy data. Exiting..."
+					echo "${FAIL} Failed to copy data. Exiting..."
 					log "ERROR" "Failed to copy data to USB"
 					exit 1
 				fi
 					
 			fi 
 		else
-			echo "${FAIL}[-]${NC} Provided disk does not exist. Exiting..."
+			echo "${FAIL} Provided disk does not exist. Exiting..."
 			log "ERROR" "USB does not exist"
 			exit 1
 		fi
 	else
-		echo "${FAIL}[-]${NC} Please provide a disk name. Exiting..."
+		echo "${FAIL} Please provide a disk name. Exiting..."
 		log "ERROR" "USB name not provided"
 		exit 1
 	fi
@@ -583,7 +582,7 @@ function network {
 
 	log "INFO" "Started 'network'"
 
-	echo "${INFO}[*]${NC} Checking IP Address..."
+	echo "${INFO} Checking IP Address..."
 
 	if [ ! "${ipPort}" == "none" ] && [[ "${ipPort}" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\:[0-9]{1,5}$ ]] ; then
 
@@ -594,29 +593,29 @@ function network {
 
 		directory="$HOME/$(head -c24 < /dev/urandom | base64 | tr -cd '[:alnum:]')"
 
-		echo "${INFO}[*]${NC} Creating temporary directory at ${directory}"
+		echo "${INFO} Creating temporary directory at ${directory}"
 		log "INFO" "Temporary directory created at ${directory}"
 	
 		if ! [[ -d "${directory}" ]] ; then
 			mkdir "${directory}" && cd "${directory}"
 		else
-			echo "${FAIL}[-]${NC} Failed to create directory. Exiting..."
+			echo "${FAIL} Failed to create directory. Exiting..."
 			log "ERROR" "Couldn't create directory ${directory}"
 			exit 1
 		fi
 
 		collect "${SKIP}"
 
-		echo "${INFO}[*]${NC} Performing Shasum of files..."
+		echo "${INFO} Performing Shasum of files..."
 		log "INFO" "Shasum started"
 
 		lHostName="$(scutil --get LocalHostName)"
 
 		if find . -type f -exec shasum -a 256 '{}' \; >> "${lHostName}"-shasum.txt ; then
-			echo "${PASS}[+]${NC} Shasum complete. Stored in: ${lHostName}-shasum.txt"
+			echo "${PASS} Shasum complete. Stored in: ${lHostName}-shasum.txt"
 			log "INFO" "Shasum completed"
 		else
-			echo "${WARN}[!]${NC} Shasum failed. Continuing..."
+			echo "${WARN} Shasum failed. Continuing..."
 			log "WARN" "Shasum failed"
 		fi
 
@@ -627,32 +626,32 @@ function network {
 
 			# As tar has no option to encrypt, the data must be compressed then passed to openssl to encrypt
 			if openssl enc -e -aes256 -in output.tar -out "${lHostName}".tar -pass pass:"${passphrase}"; then
-				echo "${PASS}[+]${NC} Successfully compressed and encrypted data. Passphrase: ${passphrase}"
+				echo "${PASS} Successfully compressed and encrypted data. Passphrase: ${passphrase}"
 				log "INFO" "Data compressed and encrypted. Passphrase: ${passphrase}"
 				rm output.tar
 			else
-				echo "${FAIL}[-]${NC} Failed to encrypt data. Exitting..."
+				echo "${FAIL} Failed to encrypt data. Exitting..."
 				log "ERROR" "Couldn't encrypt data"
 				exit 1
 			fi
 		else
-			echo "${FAIL}[-]${NC} Failed to compress data. Exitting..."
+			echo "${FAIL} Failed to compress data. Exitting..."
 			log "ERROR" "Couldn't compress data"
 			exit 1
 		fi
 		
-		echo "${INFO}[*]${NC} Starting nc transfer to ${ipPort}..."
+		echo "${INFO} Starting nc transfer to ${ipPort}..."
 		log "INFO" "netcat started"
 
-		echo "${INFO}[*]${NC} Waiting on connection..."
+		echo "${INFO} Waiting on connection..."
 
 		# Transfer using netcat
 		if nc -n "${ip}" "${port}" -w 30 < "${lHostName}.tar" ; then
-			echo "${PASS}[+]${NC} Successfully transferred data. Remember passphrase: ${passphrase}"
+			echo "${PASS} Successfully transferred data. Remember passphrase: ${passphrase}"
 			log "INFO" "Data transferred successfully"
 		fi
 	else
-		echo "${FAIL}[-]${NC} Please provide an IP address. Exiting..."
+		echo "${FAIL} Please provide an IP address. Exiting..."
 		log "ERROR" "No IP address provided"
 		exit 1
 	fi
@@ -662,10 +661,10 @@ function network {
 function check_sudo {
 	log "INFO" "Checking sudo permissions"
 
-	echo "${INFO}[*]${NC} Checking sudo permissions..."
+	echo "${INFO} Checking sudo permissions..."
 
 	if [ "$EUID" -ne 0 ] ; then
-		echo "${FAIL}[-]${NC} Please run with sudo..."
+		echo "${FAIL} Please run with sudo..."
  	 	exit 1
 	fi
 
@@ -673,9 +672,9 @@ function check_sudo {
 
 function check_fda {
 
-	echo -e "${INFO}[*]${NC} Checking if Terminal.app has FDA..."
+	echo -e "${INFO} Checking if Terminal.app has FDA..."
 	if  file /Library/Application\ Support/com.apple.tcc/TCC.db | grep -q 'Operation' ; then
-		echo -e "${FAIL}[-]${NC} Terminal.app does not have FDA."
+		echo -e "${FAIL} Terminal.app does not have FDA."
 		echo -e "    To enable FDA: System Preferences > Security and Privacy > Privacy > Full Disk Access."
 		exit 1
 	fi
