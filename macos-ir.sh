@@ -6,10 +6,9 @@
 set -euo pipefail
 
 # Colours for output
-FAIL=$(echo -en '\033[01;31m')
-NC=$(echo -en '\033[0m')
-INFO=$(echo -en '\033[01;35m')
-WARN=$(echo -en '\033[1;33m')
+FAIL=$(echo -en '\033[01;31m[-]\033[0m')
+INFO=$(echo -en '\033[01;35m[*]\033[0m')
+WARN=$(echo -en '\033[1;33m[!]\033[0m')
 
 # Internal Field Seperator
 IFS=$'\n'
@@ -68,7 +67,7 @@ function install_tools {
 	# Check if the required tools are installed. If not, install them.
 	# Installs Xcode Tools and Homebrew. Brewfile (macOS-ir/Brewfile) used by Homebrew.
 
-	echo -e "\n${INFO}[*]${NC} Installing XCode Tools"
+	echo -e "\n${INFO} Installing XCode Tools"
 	echo "-------------------------------------------------------------------------------"
 
 	if xcode-select --install  2> /dev/null | grep -q 'install requested'; then
@@ -79,16 +78,16 @@ function install_tools {
 	if ! [[ "$(command -v brew)" > /dev/null ]] ; then
 
 		# Install Homebrew
-		echo -e "\n${INFO}[*]${NC} Installing Homebrew"
+		echo -e "\n${INFO} Installing Homebrew"
 		echo "-------------------------------------------------------------------------------"
 		if ! /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" ; then
 
-			echo "${FAIL}[-]${NC} Failed to install Homebrew..."
+			echo "${FAIL} Failed to install Homebrew..."
 			exit 1
 		fi
 	fi
 
-	echo -e "\n${INFO}[*]${NC} Installing Tools Using Homebrew"
+	echo -e "\n${INFO} Installing Tools Using Homebrew"
 	echo "-------------------------------------------------------------------------------"
 
 	brew update >> /dev/null
@@ -123,7 +122,7 @@ function main {
 					h ) usage
 						;;
 
-					d ) echo "${WARN}[!]${NC} Sudo permissions required..."
+					d ) echo "${WARN} Sudo permissions required..."
 						sudo ./collect.sh -d "${SKIP}"
 						;;
 
@@ -144,14 +143,14 @@ function main {
 							#Verify data provided is a valid IP and port
 							if [[ ${ipArray[0]} -le 255 ]] &&  [[ ${ipArray[1]} -le 255 ]] && [[ ${ipArray[2]} -le 255 ]] && [[ ${ipArray[3]} -le 255 ]] && [[ ${port} -le 65365 ]]; then
 
-								echo "${WARN}[!]${NC} Sudo permissions required..."
+								echo "${WARN} Sudo permissions required..."
 								sudo ./collect.sh -n "${ipPort}" "${SKIP}"
 							else
-								echo "${FAIL}[-]${NC} Please provide a valid IP address and port. Exiting..."
+								echo "${FAIL} Please provide a valid IP address and port. Exiting..."
 								exit 1
 							fi
 						else 
-							echo "${FAIL}[-]${NC} Please provide a disk name. Exiting..."
+							echo "${FAIL} Please provide a disk name. Exiting..."
 							exit 1
 						fi
 						;;
@@ -162,14 +161,14 @@ function main {
 
 							# Verify that the provided disk name exists
 							if [[ -e /Volumes/"${disk}" ]] ; then
-								echo "${WARN}[!]${NC} Sudo permissions required..."
+								echo "${WARN} Sudo permissions required..."
 								sudo ./collect.sh -u "${disk}" "${SKIP}"
 							else
-								echo "${FAIL}[-]${NC} Provided disk does not exist. Exiting..."
+								echo "${FAIL} Provided disk does not exist. Exiting..."
 								exit 1
 							fi
 						else 
-							echo "${FAIL}[-]${NC} Please provide a disk name. Exiting..."
+							echo "${FAIL} Please provide a disk name. Exiting..."
 							exit 1
 						fi
 						;;
@@ -196,10 +195,10 @@ function main {
 
 						if ! [ "${diskImage}" == "none" ] ; then
 							install_tools
-							echo "${WARN}[!]${NC} Sudo permissions required..."
+							echo "${WARN} Sudo permissions required..."
 							sudo ./analysis.sh -d "${diskImage}"
 						else
-							echo "${FAIL}[-]${NC} Please provide a disk name. Exiting..."
+							echo "${FAIL} Please provide a disk name. Exiting..."
 						fi
 						;;
 
@@ -207,10 +206,10 @@ function main {
 
 						if ! [ "${port}" == "none" ] ; then
 							install_tools
-							echo "${WARN}[!]${NC} Sudo permissions required..."
+							echo "${WARN} Sudo permissions required..."
 							sudo ./analysis.sh -n "${port}"
 						else
-							echo "${FAIL}[-]${NC} Please provide a port. Exiting..."
+							echo "${FAIL} Please provide a port. Exiting..."
 						fi
 						;;
 
@@ -220,14 +219,14 @@ function main {
 
 							if [[ -e /Volumes/"${disk}" ]] ; then
 								install_tools
-								echo "${WARN}[!]${NC} Sudo permissions required..."
+								echo "${WARN} Sudo permissions required..."
 								sudo ./analysis.sh -u "${disk}"
 							else
-								echo "${FAIL}[-]${NC} Provided disk does not exist. Exiting..."
+								echo "${FAIL} Provided disk does not exist. Exiting..."
 								exit 1
 							fi
 						else 
-							echo "${FAIL}[-]${NC} Please provide a disk name. Exiting..."
+							echo "${FAIL} Please provide a disk name. Exiting..."
 							exit 1
 						fi
 						;;
